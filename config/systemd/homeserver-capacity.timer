@@ -1,0 +1,10 @@
+[Unit]
+Description=Hourly pool capacity and health check (timer)
+
+[Timer]
+OnCalendar=hourly
+RandomizedDelaySec=10min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

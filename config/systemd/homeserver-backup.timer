@@ -1,0 +1,10 @@
+[Unit]
+Description=Nightly restic backup to Backblaze B2 (timer)
+
+[Timer]
+OnCalendar=*-*-* 03:30
+RandomizedDelaySec=10min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

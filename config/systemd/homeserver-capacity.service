@@ -1,0 +1,10 @@
+[Unit]
+Description=Hourly pool capacity and health check
+After=network-online.target zfs.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/homeserver/scripts/check-capacity.sh
+Nice=10
+IOSchedulingClass=idle

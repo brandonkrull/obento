@@ -1,0 +1,4 @@
+# Local-only monitor user. Change the password, then re-run install.sh.
+[upsmon]
+  password = change-me-local-only
+  upsmon primary

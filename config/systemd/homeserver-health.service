@@ -1,0 +1,10 @@
+[Unit]
+Description=Weekly drive health report
+After=network-online.target zfs.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/homeserver/scripts/health-report.sh
+Nice=10
+IOSchedulingClass=idle

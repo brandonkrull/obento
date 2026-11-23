@@ -1,0 +1,10 @@
+[Unit]
+Description=Weekly drive health report (timer)
+
+[Timer]
+OnCalendar=Mon 08:00
+RandomizedDelaySec=10min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

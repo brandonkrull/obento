@@ -1,0 +1,10 @@
+[Unit]
+Description=Monthly deep backup read-back check
+After=network-online.target zfs.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/homeserver/scripts/backup.sh --verify
+Nice=10
+IOSchedulingClass=idle

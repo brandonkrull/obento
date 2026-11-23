@@ -1,0 +1,10 @@
+[Unit]
+Description=Monthly ZFS scrub with report (timer)
+
+[Timer]
+OnCalendar=Sun *-*-01..07 01:00
+RandomizedDelaySec=10min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,11 @@
+// Security updates install automatically; kernels are held and upgraded by hand
+// (see docs/RUNBOOK.md "Kernel updates"). Lesson: a kernel update broke NVMe in the article.
+Unattended-Upgrade::Package-Blacklist {
+    "linux-image-";
+    "linux-headers-";
+    "linux-modules-";
+    "linux-generic";
+};
+Unattended-Upgrade::Automatic-Reboot "false";
+APT::Periodic::Update-Package-Lists "1";
+APT::Periodic::Unattended-Upgrade "1";
