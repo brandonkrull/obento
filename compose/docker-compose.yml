@@ -167,6 +167,9 @@ services:
       - --certificatesresolvers.le.acme.storage=/data/acme.json
       - --certificatesresolvers.le.acme.dnschallenge.provider=desec
       - --certificatesresolvers.le.acme.dnschallenge.resolvers=1.1.1.1:53,9.9.9.9:53
+      # deSEC takes about a minute to copy a record to all its servers, and Let's Encrypt checks from several
+      # places; without the wait, one of them can find no proof yet.
+      - --certificatesresolvers.le.acme.dnschallenge.propagation.delaybeforechecks=120s
     environment:
       DESEC_TOKEN: ${DESEC_TOKEN:-}
     volumes:
