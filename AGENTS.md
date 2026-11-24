@@ -81,6 +81,7 @@ Without `APPS_DOMAIN`, `install.sh` publishes apps through `tailscale serve`
 | 2283 | Immich |
 | 3000 | AdGuard admin |
 | 3010 | portal (127.0.0.1 only) |
+| 3011 | UPS battery for the portal, `scripts/ups-status.py` (127.0.0.1 only) |
 | 8080 | Scrutiny |
 | 8096 | Jellyfin |
 | 8222 | Vaultwarden |

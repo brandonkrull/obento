@@ -116,6 +116,11 @@ body,
   text-align: center !important;
 }
 
+/* The Battery tile only feeds the battery gauge in the top row (custom.js). */
+li.service[data-name="Battery"] {
+  display: none;
+}
+
 /* App icons in black and white, in color on hover (Material icons are drawn in the text color) */
 .service-icon img {
   filter: grayscale(1) contrast(1.1);

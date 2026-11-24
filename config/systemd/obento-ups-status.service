@@ -1,0 +1,19 @@
+[Unit]
+Description=UPS battery status for the portal (127.0.0.1:3011)
+After=network.target nut-server.service
+
+[Service]
+ExecStart=/usr/bin/python3 -I /opt/obento/scripts/ups-status.py
+Restart=on-failure
+DynamicUser=yes
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+IPAddressAllow=localhost
+IPAddressDeny=any
+
+[Install]
+WantedBy=multi-user.target

@@ -31,3 +31,19 @@
         href: https://drives.{{HOMEPAGE_VAR_DOMAIN}}
         description: Scrutiny
         siteMonitor: http://127.0.0.1:8080
+    # Not shown as a tile: custom.js draws it as the battery gauge in the top row. The values come from
+    # scripts/ups-status.py (obento-ups-status.service), which reads the UPS through NUT.
+    - Battery:
+        widget:
+          type: customapi
+          url: http://127.0.0.1:3011/ups.json
+          refreshInterval: 30000
+          mappings:
+            - field: power
+              label: Power
+            - field: charge
+              label: Charge
+              format: percent
+            - field: runtime
+              label: Time left
+              format: duration

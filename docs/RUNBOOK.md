@@ -256,7 +256,7 @@ Tailscale address, so they only work on devices signed into your tailnet.
 | Jellyfin | `https://media.home.example.com` |
 | AdGuard Home | `https://adblock.home.example.com` (`http://tamago:3000` also keeps working) |
 | Scrutiny | `https://drives.home.example.com` (`http://tamago:8080` also keeps working) |
-| Portal: every app on one page, with status lights | `https://home.example.com` |
+| Portal: every app on one page, with status lights and the UPS battery | `https://home.example.com` |
 
 The `tamago.<tailnet>.ts.net` addresses stop working once you switch, so plan to update every device the same
 day (step 5).

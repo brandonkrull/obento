@@ -259,6 +259,10 @@ if [[ -n "${APPS_DOMAIN:-}" ]]; then
   } > "$portal_tmp/widgets.yaml"
   for f in "$portal_tmp"/*; do install_conf 644 root "$f" "$SSD_DATA/portal/$(basename "$f")"; done
   rm -rf "$portal_tmp"
+  # The portal's Battery tile reads the UPS from here (127.0.0.1:3011).
+  systemctl enable --now obento-ups-status.service
+  restart_if_stale obento-ups-status.service /opt/obento/scripts/ups-status.py \
+    /etc/systemd/system/obento-ups-status.service
   # Traefik answers every app on 443 (config/traefik/dynamic.yml), so the Tailscale port addresses go away.
   SERVE_PORTS=()
   SERVE_OFF=(443 8443 8920 9200)

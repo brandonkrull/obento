@@ -22,7 +22,7 @@ specific to that build; [Make it yours](#make-it-yours) lists each one.
 | [Jellyfin](https://jellyfin.org) | Movies, shows and music | `https://tamago.<tailnet>.ts.net:8920` | `https://media.<domain>` |
 | [AdGuard Home](https://adguard.com/adguard-home/overview.html) | Blocks ads and trackers for every device on the home network (DNS on port 53) | `http://tamago:3000` | `https://adblock.<domain>` |
 | [Scrutiny](https://github.com/AnalogJ/scrutiny) | Dashboard of drive health over time | `http://tamago:8080` | `https://drives.<domain>` |
-| Portal ([Homepage](https://gethomepage.dev)) | One page with every app, whether it's up, and the server's CPU, memory and disk | — | `https://<domain>` |
+| Portal ([Homepage](https://gethomepage.dev)) | One page with every app, whether it's up, the server's CPU, memory and disk, and the UPS battery | — | `https://<domain>` |
 
 Out of the box, the HTTPS addresses come from `tailscale serve` and work only inside your tailnet; AdGuard and
 Scrutiny are plain HTTP on the tailnet or home network. `<tailnet>` is your tailnet's name from the Tailscale
@@ -118,8 +118,8 @@ What it adds:
 
 - **Traefik**, one more app, which answers every name on port 443 and sends it to the right app
   (`config/traefik/dynamic.yml`).
-- **A portal** at `https://home.example.com` with a tile per app and a status light (`config/homepage/`;
-  `PORTAL_TITLE` and `PORTAL_LOGO` in `.env` add your own name and image).
+- **A portal** at `https://home.example.com` with a tile per app and a status light, plus the UPS battery
+  (`config/homepage/`; `PORTAL_TITLE` and `PORTAL_LOGO` in `.env` add your own name and image).
 - **One Let's Encrypt certificate** for `home.example.com` and `*.home.example.com`, renewed automatically. To get it, the server
   proves it owns the name through **[deSEC](https://desec.io)**, a free DNS host with an API.
 
@@ -233,6 +233,7 @@ scripts/
   health-report.sh         weekly SMART + per-drive latency report
   maintenance.sh           weekly Docker cleanup + "reboot needed" alert
   ups-notify.sh            UPS events → ntfy
+  ups-status.py            UPS battery for the portal's Battery tile
   notify / lib.sh          ntfy alerts and shared helpers used by everything
 config/
   nut/                     UPS monitoring and low-battery shutdown
