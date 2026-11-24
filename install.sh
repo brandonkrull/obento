@@ -144,4 +144,4 @@ else
 fi
 
 homeserver-notify default "Bootstrap complete" "install.sh finished on $(hostname)"
-log "Done. Next: 'cd compose && docker compose up -d' (see docs/RUNBOOK.md)."
+log "Done. Next: 'cd /opt/homeserver/compose && sudo docker compose up -d' (see docs/RUNBOOK.md)."
