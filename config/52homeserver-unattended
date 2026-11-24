@@ -1,11 +1,25 @@
-// Security updates install automatically; kernels are held and upgraded by hand
-// (see docs/RUNBOOK.md "Kernel updates"). Lesson: a kernel update broke NVMe in the article.
+// Updates install automatically every night (apt-daily-upgrade.timer, around 6 am): Ubuntu security and
+// regular updates, plus Docker, Tailscale and Node.js from their own repositories.
+// Kernels are held and upgraded by hand (see docs/RUNBOOK.md "Kernel updates").
+// Lesson: a kernel update broke NVMe in the article.
+Unattended-Upgrade::Origins-Pattern {
+    "origin=${distro_id},archive=${distro_codename}-updates";
+    "origin=Docker,label=Docker CE";
+    "origin=Tailscale";
+    "site=deb.nodesource.com";
+};
 Unattended-Upgrade::Package-Blacklist {
     "linux-image-";
     "linux-headers-";
     "linux-modules-";
     "linux-generic";
 };
+// Docker upgrades restart the Docker service; live-restore (config/docker-daemon.json) keeps the apps running.
 Unattended-Upgrade::Automatic-Reboot "false";
+Unattended-Upgrade::Remove-Unused-Dependencies "true";
+Unattended-Upgrade::Remove-New-Unused-Dependencies "true";
+Unattended-Upgrade::SyslogEnable "true";
 APT::Periodic::Update-Package-Lists "1";
+APT::Periodic::Download-Upgradeable-Packages "1";
 APT::Periodic::Unattended-Upgrade "1";
+APT::Periodic::AutocleanInterval "7";

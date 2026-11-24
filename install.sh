@@ -73,10 +73,16 @@ ufw allow from 192.168.0.0/16
 ufw allow from 10.0.0.0/8
 ufw --force enable
 
-log "Security updates automatic; kernel updates held (lesson: kernel regressions)"
+log "Updates automatic (Ubuntu, Docker, Tailscale, Node.js); kernel updates held (lesson: kernel regressions)"
 install -m 644 "$REPO_DIR/config/52homeserver-unattended" /etc/apt/apt.conf.d/52homeserver-unattended
 apt-mark hold linux-image-generic linux-headers-generic linux-generic \
   linux-image-generic-hwe-24.04 linux-headers-generic-hwe-24.04 linux-generic-hwe-24.04 >/dev/null 2>&1 || true
+
+log "Docker: keep apps running through Docker upgrades, cap container log size"
+install -d /etc/docker
+install_conf 644 root "$REPO_DIR/config/docker-daemon.json" /etc/docker/daemon.json
+# Restarts the apps once, the first time; after that live-restore keeps them running.
+restart_if_stale docker /etc/docker/daemon.json
 
 log "Install repo to /opt/homeserver (systemd units run scripts from here)"
 install -d /opt/homeserver
@@ -117,10 +123,11 @@ else
   warn "NUT will start once the UPS USB cable is connected."
 fi
 
-log "Timers: backup, capacity check, scrub, drive health report"
+log "Timers: backup, capacity check, scrub, drive health report, weekly cleanup"
 for u in "$REPO_DIR"/config/systemd/*; do install -m 644 "$u" /etc/systemd/system/; done
 systemctl daemon-reload
-systemctl enable --now homeserver-capacity.timer homeserver-scrub.timer homeserver-health.timer
+systemctl enable --now homeserver-capacity.timer homeserver-scrub.timer homeserver-health.timer \
+  homeserver-maintenance.timer
 # Backup timer is enabled by scripts/backup.sh --init once B2 is configured.
 # Ubuntu's built-in monthly scrub cron is replaced by our timer (which also alerts):
 [[ -f /etc/cron.d/zfsutils-linux ]] && sed -i 's/^\([^#].*zfs.*scrub.*\)$/# \1  # replaced by homeserver-scrub.timer/' /etc/cron.d/zfsutils-linux

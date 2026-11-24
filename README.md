@@ -19,9 +19,10 @@ scripts/
   scrub.sh                 monthly scrub with report
   check-capacity.sh        80% / pool-health alerts
   health-report.sh         weekly SMART + per-drive latency report
+  maintenance.sh           weekly Docker cleanup + "reboot needed" alert
   tamago                   start/stop/check the apps: tamago up|down|stop|restart|status|logs|update
   notify / lib.sh          ntfy alerts used by everything (smartd, ZED, UPS, timers)
-config/                    smartd, sanoid, NUT (UPS), unattended-upgrades, sshd, systemd timers, pi
+config/                    smartd, sanoid, NUT (UPS), unattended-upgrades, Docker, sshd, systemd timers, pi
 docs/DRIVE-PLAN.md         why the storage is set up this way (incl. the Akita NAS lessons)
 docs/RUNBOOK.md            step-by-step: install → apps → burn-in → pool → migrate → backup → ops
 docs/MAC-SETUP.md          setting up a Mac to use the server: Tailscale, ssh, and the apps

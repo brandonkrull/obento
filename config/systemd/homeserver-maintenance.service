@@ -1,0 +1,10 @@
+[Unit]
+Description=Weekly Docker cleanup and reboot check
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/homeserver/scripts/maintenance.sh
+Nice=10
+IOSchedulingClass=idle

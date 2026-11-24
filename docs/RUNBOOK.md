@@ -310,6 +310,8 @@ python3 -I /opt/homeserver/scripts/verify-takeout.py /path/to/extracted/Takeout 
 | B2 backup | nightly 3:30 am | OK / FAILED |
 | B2 read-back check (5%) | monthly | result |
 | UPS on battery / low battery | instantly | auto-shutdown on low battery |
+| Updates: Ubuntu, Docker, Tailscale, Node.js (not the kernel) | nightly, ~6 am | — (log: `/var/log/unattended-upgrades/`) |
+| Docker cleanup (old image layers, build cache) + reboot check | Sundays 4:30 am | "Reboot needed" when an update asks for one |
 
 ## Quarterly restore test
 
@@ -326,6 +328,10 @@ restic restore latest --target /tmp/restore-test --include "/tank/photos/library
 3. Replace the **weakest** drive first. Burn in the new drive (step 4) unless the pool is degraded and urgent.
 4. `sudo zpool replace tank <old-by-id> /dev/disk/by-id/<new>` and watch `zpool status` until the resilver finishes.
 5. Scrub afterwards: `sudo /opt/homeserver/scripts/scrub.sh`.
+
+Container logs are capped at 3 × 10 MB per app (`/etc/docker/daemon.json`). Docker upgrades don't stop the
+apps (live-restore). Nothing reboots on its own: when you get "Reboot needed", run `sudo reboot` at a quiet
+time. To see what ran: `journalctl -u homeserver-maintenance` and `sudo unattended-upgrade --dry-run -d`.
 
 ## Kernel updates (manual)
 

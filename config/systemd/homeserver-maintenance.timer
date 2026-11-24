@@ -1,0 +1,10 @@
+[Unit]
+Description=Weekly Docker cleanup and reboot check (timer)
+
+[Timer]
+OnCalendar=Sun 04:30
+RandomizedDelaySec=10min
+Persistent=true
+
+[Install]
+WantedBy=timers.target
