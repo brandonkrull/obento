@@ -120,8 +120,9 @@ What it adds:
 - **One Let's Encrypt certificate** for `*.home.example.com`, renewed automatically. To get it, the server
   proves it owns the name through **[deSEC](https://desec.io)**, a free DNS host with an API.
 
-What you need: a domain, a free deSEC account, and two `NS` records at your domain's DNS host that hand just
-the `home` part to deSEC. Your website and email records stay where they are. Then three settings in `.env`:
+What you need: a domain, a free deSEC account with one `*` record pointing at the server's Tailscale IP, and
+two `NS` records at your domain's DNS host that hand just the `home` part to deSEC. Your website and email
+records stay where they are. Then three settings in `.env`:
 
 ```bash
 APPS_DOMAIN=home.example.com
@@ -130,8 +131,9 @@ COMPOSE_PROFILES=domain
 ```
 
 and `sudo ./install.sh && obento up`. Step by step, including moving each device over:
-[RUNBOOK: Your own web addresses](docs/RUNBOOK.md#your-own-web-addresses-optional). Without these settings
-nothing changes: Traefik doesn't run and the Tailscale addresses above are used.
+[RUNBOOK: Your own web addresses](docs/RUNBOOK.md#your-own-web-addresses-optional). Once it's on, the
+`tamago.<tailnet>.ts.net` addresses stop working, so move every device over the same day. Without these
+settings nothing changes: Traefik doesn't run and the Tailscale addresses above are used.
 
 ## Make it yours
 
