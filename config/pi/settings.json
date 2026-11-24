@@ -1,0 +1,6 @@
+{
+  "defaultProvider": "spark",
+  "defaultModel": "qwen36-moe",
+  "defaultThinkingLevel": "medium",
+  "theme": "dark"
+}

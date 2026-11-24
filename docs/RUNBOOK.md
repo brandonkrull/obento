@@ -104,6 +104,17 @@ sudo systemctl status smartmontools        # you should get a "test" ntfy alert 
 
 Install the **ntfy** app on your phone and subscribe to your `NTFY_TOPIC`.
 
+`install.sh` also installs **pi** (the coding agent) for your account, set up to use `qwen36-moe` on
+spark-e2ca (`config/pi/`, copied to `~/.pi/agent/`; an existing file there is kept). It reaches spark by its
+Tailscale name, so `tailscale up` must be done first. Check it:
+
+```bash
+getent hosts spark-e2ca                       # a 100.x address (via libnss-resolve + Tailscale)
+curl -s http://spark-e2ca:11437/health        # {"status":"ok"}
+pi --list-models qwen
+pi -p "Say hello"
+```
+
 ## 3. Apps (on the SSD until the drives arrive)
 
 ```bash

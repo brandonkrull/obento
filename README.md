@@ -20,7 +20,7 @@ scripts/
   check-capacity.sh        80% / pool-health alerts
   health-report.sh         weekly SMART + per-drive latency report
   notify / lib.sh          ntfy alerts used by everything (smartd, ZED, UPS, timers)
-config/                    smartd, sanoid, NUT (UPS), unattended-upgrades, sshd, systemd timers
+config/                    smartd, sanoid, NUT (UPS), unattended-upgrades, sshd, systemd timers, pi
 docs/DRIVE-PLAN.md         why the storage is set up this way (incl. the Akita NAS lessons)
 docs/RUNBOOK.md            step-by-step: install → apps → burn-in → pool → migrate → backup → ops
 ```
