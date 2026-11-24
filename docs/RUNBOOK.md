@@ -183,6 +183,8 @@ the end). It needs **HTTPS Certificates** turned on in the Tailscale admin conso
   works once Tailscale is up and `install.sh` has run since.
 - Vaultwarden: sign-ups are off by default. To create the family's accounts, run `tamago signups on`,
   create them at https://tamago.<tailnet>.ts.net:8443, then `tamago signups off` (any `tamago up` also turns them off).
+- Scrutiny: `install.sh` points its alerts at your ntfy topic (early drive warnings, and a drive that stops
+  reporting). Send a test alert with `curl -X POST http://tamago:8080/api/health/notify`.
 - Test with a few hundred photos (phone app → backup).
 
 **Start the Google Takeout now** (Google Photos only, .zip, 50 GB parts). It can take a day+ to prepare.

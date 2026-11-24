@@ -144,6 +144,30 @@ case "${OPENCLOUD_ADMIN_PASSWORD:-}" in
   ""|change-me*) warn "Set OPENCLOUD_ADMIN_PASSWORD in .env before OpenCloud's first start." ;;
 esac
 
+log "Scrutiny alerts (-> ntfy)"
+SCRUTINY_CONF="$SSD_DATA/scrutiny/config/scrutiny.yaml"
+SCRUTINY_MARK="# Written by homeserver install.sh from NTFY_* in .env; edits are overwritten."
+install -d -m 755 "$SSD_DATA/scrutiny/config"
+if [[ -f "$SCRUTINY_CONF" ]] && ! head -1 "$SCRUTINY_CONF" | grep -qxF "$SCRUTINY_MARK"; then
+  warn "Kept your own $SCRUTINY_CONF; add an ntfy URL under notify.urls yourself."
+elif [[ -n "${NTFY_TOKEN:-}" ]]; then
+  warn "Scrutiny alerts not set up: NTFY_TOKEN isn't supported here yet."
+else
+  tmp="$(mktemp)"
+  # Shoutrrr ntfy URL: host and topic, HTTPS by default.
+  printf '%s\nnotify:\n  urls:\n    - "ntfy://%s/%s?title=%s"\n' \
+    "$SCRUTINY_MARK" "$(sed -E 's#^https?://##; s#/+$##' <<<"$NTFY_URL")" "$NTFY_TOPIC" "Scrutiny%20on%20$(hostname)" > "$tmp"
+  if ! cmp -s "$tmp" "$SCRUTINY_CONF"; then
+    install -m 600 "$tmp" "$SCRUTINY_CONF"
+    # Scrutiny reads its config at start; restart it if it's already running.
+    if docker ps --format '{{.Names}}' | grep -qx scrutiny; then
+      docker restart scrutiny >/dev/null
+      log "Restarted scrutiny"
+    fi
+  fi
+  rm -f "$tmp"
+fi
+
 log "Snapshots config (applies once the pool exists)"
 install -m 644 "$REPO_DIR/config/sanoid.conf" /etc/sanoid/sanoid.conf 2>/dev/null || {
   install -d /etc/sanoid; install -m 644 "$REPO_DIR/config/sanoid.conf" /etc/sanoid/sanoid.conf; }
