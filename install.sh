@@ -10,6 +10,27 @@ install -d -m 700 /etc/homeserver
 install -m 600 "$REPO_DIR/.env" /etc/homeserver/.env
 load_env
 
+# install_conf <mode> <group> <src> <dest>: copy only when the content differs, so the file's
+# modification time says when its settings last changed.
+install_conf() {
+  cmp -s "$3" "$4" || install -m "$1" -g "$2" "$3" "$4"
+}
+
+# restart_if_stale <unit> <config...>: 'systemctl enable --now' leaves a running service on its old
+# settings, so restart it when any of its config files changed after it started.
+restart_if_stale() {
+  local unit="$1" started f; shift
+  started="$(systemctl show "$unit" -p ActiveEnterTimestamp --value)"
+  [[ -n "$started" ]] || return 0
+  for f in "$@"; do
+    if (( $(stat -c %Y "$f") > $(date -d "$started" +%s) )); then
+      log "Restarting $unit (settings changed)"
+      systemctl restart "$unit"
+      return
+    fi
+  done
+}
+
 log "Base packages"
 apt-get update
 DEBIAN_FRONTEND=noninteractive apt-get install -y \
@@ -67,8 +88,10 @@ ln -sf /opt/homeserver/scripts/notify /usr/local/bin/homeserver-notify
 ln -sf /opt/homeserver/scripts/tamago /usr/local/bin/tamago
 
 log "Drive health monitoring (smartd)"
-install -m 644 "$REPO_DIR/config/smartd.conf" /etc/smartd.conf
-systemctl enable --now smartmontools 2>/dev/null || systemctl enable --now smartd
+install_conf 644 root "$REPO_DIR/config/smartd.conf" /etc/smartd.conf
+systemctl enable --now smartmontools
+# A restart sends one test alert per drive (-M test), so it only happens when the settings change.
+restart_if_stale smartmontools /etc/smartd.conf
 
 log "ZFS event alerts (ZED -> ntfy)"
 ZEDRC=/etc/zfs/zed.d/zed.rc
@@ -84,11 +107,15 @@ if [[ -f $ZEDRC ]]; then
 fi
 
 log "UPS (APC BE600M1 over USB) -> clean shutdown on low battery"
-install -m 640 -g nut "$REPO_DIR/config/nut/ups.conf"   /etc/nut/ups.conf
-install -m 640 -g nut "$REPO_DIR/config/nut/nut.conf"   /etc/nut/nut.conf
-install -m 640 -g nut "$REPO_DIR/config/nut/upsd.users" /etc/nut/upsd.users
-install -m 640 -g nut "$REPO_DIR/config/nut/upsmon.conf" /etc/nut/upsmon.conf
-systemctl enable --now nut-server nut-monitor 2>/dev/null || warn "NUT will start once the UPS USB cable is connected."
+for f in ups.conf nut.conf upsd.users upsmon.conf; do
+  install_conf 640 nut "$REPO_DIR/config/nut/$f" "/etc/nut/$f"
+done
+if systemctl enable --now nut-server nut-monitor 2>/dev/null; then
+  restart_if_stale nut-server /etc/nut/ups.conf /etc/nut/nut.conf /etc/nut/upsd.users
+  restart_if_stale nut-monitor /etc/nut/nut.conf /etc/nut/upsmon.conf
+else
+  warn "NUT will start once the UPS USB cable is connected."
+fi
 
 log "Timers: backup, capacity check, scrub, drive health report"
 for u in "$REPO_DIR"/config/systemd/*; do install -m 644 "$u" /etc/systemd/system/; done
