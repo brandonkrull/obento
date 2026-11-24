@@ -25,6 +25,7 @@ config/                    smartd, sanoid, NUT (UPS), unattended-upgrades, sshd,
 docs/DRIVE-PLAN.md         why the storage is set up this way (incl. the Akita NAS lessons)
 docs/RUNBOOK.md            step-by-step: install → apps → burn-in → pool → migrate → backup → ops
 docs/MAC-SETUP.md          setting up a Mac to use the server: Tailscale, ssh, and the apps
+docs/IOS-SETUP.md          setting up an iPhone or iPad: Tailscale and the apps (for the whole family)
 ```
 
 Start with **docs/RUNBOOK.md**.
