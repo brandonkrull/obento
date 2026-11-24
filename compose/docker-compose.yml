@@ -112,13 +112,13 @@ services:
     entrypoint: ["/bin/sh", "-c"]
     # init writes the config with random secrets on first start and fails harmlessly afterwards
     command: ["opencloud init || true; opencloud server"]
-    # Host networking: OpenCloud checks sign-ins by fetching its own https://tamago.<tailnet>.ts.net:9200,
-    # and Tailscale serve only answers connections from this machine or the tailnet, not from Docker's network.
-    # install.sh writes OC_URL and the name -> Tailscale IP mapping into docker-compose.override.yml.
+    # Host networking: OpenCloud checks sign-ins by fetching its own address (https://files.<APPS_DOMAIN>, or
+    # https://tamago.<tailnet>.ts.net:9200), and Tailscale serve only answers this machine or the tailnet, not
+    # Docker's network. install.sh writes OC_URL and how to reach it into docker-compose.override.yml.
     network_mode: host
     environment:
-      PROXY_HTTP_ADDR: "127.0.0.1:9201"   # only reachable through https://tamago.<tailnet>.ts.net:9200
-      PROXY_TLS: "false"                # Tailscale serve terminates HTTPS
+      PROXY_HTTP_ADDR: "127.0.0.1:9201"   # only reachable through Traefik or Tailscale serve
+      PROXY_TLS: "false"                # they handle HTTPS
       OC_INSECURE: "false"
       IDM_ADMIN_PASSWORD: ${OPENCLOUD_ADMIN_PASSWORD:-}   # first start only; change it later in OpenCloud
       IDM_CREATE_DEMO_USERS: "false"

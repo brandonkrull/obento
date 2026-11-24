@@ -4,7 +4,9 @@ Everything an iPhone or iPad needs to use the home server (tamago): getting on t
 photos, files, passwords, media and alerts. Do it once per device; it doesn't change anything on the server.
 Use it for the whole family: each person signs in with their own accounts.
 
-Addresses below use `tamago.<tailnet>.ts.net`. Find your tailnet name in the Tailscale admin console (DNS page).
+Addresses below come in two styles. If the server has its own web addresses (ask whoever runs it; for example
+`https://photos.home.example.com`), use the first one. Otherwise use the `tamago.<tailnet>.ts.net` one; find
+your tailnet name in the Tailscale admin console (DNS page).
 
 ## 1. Tailscale (required)
 
@@ -15,7 +17,7 @@ Every app is reachable only inside your tailnet, at home and away, so start here
    Family members sign in with their own account once they've been invited to the tailnet
    (Tailscale admin console → **Users** → **Invite**), or you share tamago with them (**Machines** → tamago → **Share**).
 3. In Tailscale's settings, leave **Use Tailscale DNS** on so `tamago` addresses work.
-4. Check: open `https://tamago.<tailnet>.ts.net:9200` in Safari. You should see OpenCloud's sign-in page.
+4. Check: open the Photos address from the table below in Safari. You should see Immich's sign-in page.
 
 Tailscale needs to be connected for the apps below to work. Turning on **VPN On Demand** (Settings → VPN →
 Tailscale → ⓘ) keeps it connected automatically.
@@ -31,7 +33,7 @@ Wi-Fi or mobile data.
 
 - Check it: open https://d3ward.github.io/toolz/adblock in Safari; most tests should show as blocked.
 - If a site or app breaks because something it needs is blocked, the admin can allow it in AdGuard
-  (http://tamago:3000 → **Query log** → **Unblock**).
+  (`https://adblock.<your domain>` or `http://tamago:3000` → **Query log** → **Unblock**).
 - Family members you only *shared* tamago with (instead of inviting them to the tailnet) don't get this: ad
   blocking comes with the tailnet's DNS settings, which shared devices don't use.
 - With away-from-home blocking on, websites won't load while Tailscale is on and the server is off: turn
@@ -41,10 +43,10 @@ Wi-Fi or mobile data.
 
 | What | App Store app | Server address to enter |
 |---|---|---|
-| Photos | **Immich** | `https://photos.<your domain>` if the server has its own addresses, otherwise `https://tamago.<tailnet>.ts.net` |
-| Files (Google Drive replacement) | **OpenCloud** | `https://tamago.<tailnet>.ts.net:9200` |
-| Passwords | **Bitwarden** | `https://tamago.<tailnet>.ts.net:8443` |
-| Media | **Jellyfin** (or **Swiftfin**, a native player) | `https://tamago.<tailnet>.ts.net:8920` |
+| Photos | **Immich** | `https://photos.<your domain>`, or `https://tamago.<tailnet>.ts.net` |
+| Files (Google Drive replacement) | **OpenCloud** | `https://files.<your domain>`, or `https://tamago.<tailnet>.ts.net:9200` |
+| Passwords | **Bitwarden** | `https://passwords.<your domain>`, or `https://tamago.<tailnet>.ts.net:8443` |
+| Media | **Jellyfin** (or **Swiftfin**, a native player) | `https://media.<your domain>`, or `https://tamago.<tailnet>.ts.net:8920` |
 | Alerts (admins only) | **ntfy** | your `NTFY_URL` and `NTFY_TOPIC` from `.env` |
 
 ### Immich (photo backup)
@@ -68,7 +70,7 @@ Wi-Fi or mobile data.
 ### Bitwarden (passwords)
 
 1. Open **Bitwarden** and, before logging in, change **Logging in on** to **Self-hosted**.
-2. Server URL: `https://tamago.<tailnet>.ts.net:8443`, then log in with your Vaultwarden account.
+2. Server URL: the Passwords address from the table above, then log in with your Vaultwarden account.
 3. Let it fill passwords: Settings → General → **AutoFill** (or **Passwords → Password Options** on older iOS)
    → turn on **Bitwarden**.
 

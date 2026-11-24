@@ -3,7 +3,9 @@
 Everything a Mac needs to use the home server (tamago): getting on the tailnet, signing in to the server, and the
 apps for files, passwords, media, photos and alerts. Do it once per Mac; it doesn't change anything on the server.
 
-Addresses below use `tamago.<tailnet>.ts.net`. Find your tailnet name in the Tailscale admin console (DNS page)
+Addresses below come in two styles. If the server has its own web addresses (`APPS_DOMAIN` in its `.env`,
+for example `home.example.com`), use the first one, like `https://photos.home.example.com`. Otherwise use the
+`tamago.<tailnet>.ts.net` one; find your tailnet name in the Tailscale admin console (DNS page)
 or with `tailscale status --json | jq -r .MagicDNSSuffix` once step 1 is done.
 
 ## Quick version
@@ -37,7 +39,7 @@ network.
   browser. Away-from-home blocking is on when `tailscale dns status` lists the server's Tailscale IP under
   **Resolvers**.
 - If a site or app breaks because something it needs is blocked, the admin can allow it in AdGuard
-  (http://tamago:3000 → **Query log** → **Unblock**).
+  (the ad blocking admin address below → **Query log** → **Unblock**).
 - Macs you only *shared* tamago with (instead of inviting to the tailnet) don't get this: ad blocking comes with
   the tailnet's DNS settings, which shared devices don't use.
 - With away-from-home blocking on, websites won't load while Tailscale is on and the server is off: quit
@@ -68,13 +70,13 @@ ssh tamago
 
 | What | Mac app | Server address to enter |
 |---|---|---|
-| Files (Google Drive replacement) | **OpenCloud**: `brew install --cask opencloud` | `https://tamago.<tailnet>.ts.net:9200` |
-| Passwords | **Bitwarden**: `brew install --cask bitwarden`, plus the Bitwarden browser extension | `https://tamago.<tailnet>.ts.net:8443` |
-| Media | **Jellyfin Media Player**: `brew install --cask jellyfin-media-player` | `https://tamago.<tailnet>.ts.net:8920` |
-| Photos | Immich has no Mac app: use the browser (phones use the Immich app) | `https://photos.<your domain>` if the server has its own addresses, otherwise `https://tamago.<tailnet>.ts.net` |
+| Files (Google Drive replacement) | **OpenCloud**: `brew install --cask opencloud` | `https://files.<your domain>`, or `https://tamago.<tailnet>.ts.net:9200` |
+| Passwords | **Bitwarden**: `brew install --cask bitwarden`, plus the Bitwarden browser extension | `https://passwords.<your domain>`, or `https://tamago.<tailnet>.ts.net:8443` |
+| Media | **Jellyfin Media Player**: `brew install --cask jellyfin-media-player` | `https://media.<your domain>`, or `https://tamago.<tailnet>.ts.net:8920` |
+| Photos | Immich has no Mac app: use the browser (phones use the Immich app) | `https://photos.<your domain>`, or `https://tamago.<tailnet>.ts.net` |
 | Alerts | ntfy in the browser (allow notifications), or the phone app | `<NTFY_URL>/<NTFY_TOPIC>` from `.env`, e.g. `https://ntfy.sh/your-topic` |
-| Ad blocking admin | browser | `http://tamago:3000` |
-| Drive health | browser | `http://tamago:8080` |
+| Ad blocking admin | browser | `https://adblock.<your domain>`, or `http://tamago:3000` |
+| Drive health | browser | `https://drives.<your domain>`, or `http://tamago:8080` |
 
 ### OpenCloud
 
@@ -86,7 +88,7 @@ Accounts are created by the admin in OpenCloud (**Admin settings → Users**), n
 ### Bitwarden (Vaultwarden)
 
 1. Open **Bitwarden**, and before logging in choose **Self-hosted** (the region selector on the login screen).
-2. Server URL: `https://tamago.<tailnet>.ts.net:8443`, then log in with your Vaultwarden account.
+2. Server URL: the Passwords address from the table above, then log in with your Vaultwarden account.
 3. Do the same in the browser extension.
 
 New accounts need sign-ups switched on for a moment: `obento signups on` on the server, create the account,

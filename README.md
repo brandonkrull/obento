@@ -14,17 +14,18 @@ specific to that build; [Make it yours](#make-it-yours) lists each one.
 
 ## What you get
 
-| App | What it's for | How you reach it |
-|---|---|---|
-| [Immich](https://immich.app) | Photo and video backup from phones (a Google Photos replacement) | `https://tamago.<tailnet>.ts.net`, or `https://photos.<your domain>` |
-| [Vaultwarden](https://github.com/dani-garcia/vaultwarden) | Family password manager; works with the Bitwarden apps | `https://tamago.<tailnet>.ts.net:8443` |
-| [OpenCloud](https://opencloud.eu) | Files synced across devices (a Google Drive replacement) | `https://tamago.<tailnet>.ts.net:9200` |
-| [Jellyfin](https://jellyfin.org) | Movies, shows and music | `https://tamago.<tailnet>.ts.net:8920` |
-| [AdGuard Home](https://adguard.com/adguard-home/overview.html) | Blocks ads and trackers for every device on the home network (DNS on port 53) | `http://tamago:3000` |
-| [Scrutiny](https://github.com/AnalogJ/scrutiny) | Dashboard of drive health over time | `http://tamago:8080` |
+| App | What it's for | Address | With [your own domain](#optional-your-own-web-addresses) |
+|---|---|---|---|
+| [Immich](https://immich.app) | Photo and video backup from phones (a Google Photos replacement) | `https://tamago.<tailnet>.ts.net` | `https://photos.<domain>` |
+| [Vaultwarden](https://github.com/dani-garcia/vaultwarden) | Family password manager; works with the Bitwarden apps | `https://tamago.<tailnet>.ts.net:8443` | `https://passwords.<domain>` |
+| [OpenCloud](https://opencloud.eu) | Files synced across devices (a Google Drive replacement) | `https://tamago.<tailnet>.ts.net:9200` | `https://files.<domain>` |
+| [Jellyfin](https://jellyfin.org) | Movies, shows and music | `https://tamago.<tailnet>.ts.net:8920` | `https://media.<domain>` |
+| [AdGuard Home](https://adguard.com/adguard-home/overview.html) | Blocks ads and trackers for every device on the home network (DNS on port 53) | `http://tamago:3000` | `https://adblock.<domain>` |
+| [Scrutiny](https://github.com/AnalogJ/scrutiny) | Dashboard of drive health over time | `http://tamago:8080` | `https://drives.<domain>` |
 
-The HTTPS addresses come from `tailscale serve` and work only inside your tailnet. AdGuard and Scrutiny are
-plain HTTP on the tailnet or home network. `<tailnet>` is your tailnet's name from the Tailscale admin console.
+Out of the box, the HTTPS addresses come from `tailscale serve` and work only inside your tailnet; AdGuard and
+Scrutiny are plain HTTP on the tailnet or home network. `<tailnet>` is your tailnet's name from the Tailscale
+admin console. With a domain of your own, every app gets a short HTTPS name instead (still tailnet-only).
 
 In the background, without you doing anything:
 
@@ -104,6 +105,33 @@ The [runbook](docs/RUNBOOK.md) is the step-by-step guide; this is the shape of i
 
 Set `OPENCLOUD_ADMIN_PASSWORD` before the first `obento up`: OpenCloud only reads it on its first start.
 Then set up your devices with [docs/MAC-SETUP.md](docs/MAC-SETUP.md) and [docs/IOS-SETUP.md](docs/IOS-SETUP.md).
+
+## Optional: your own web addresses
+
+If you own a domain, the apps can live at names like `photos.home.example.com` instead of
+`tamago.<tailnet>.ts.net:8443`-style ports. They're easier to remember and type into apps, and they don't
+change if you rename your tailnet. They're still private: the names point at the server's Tailscale address, so
+they only work on devices in your tailnet.
+
+What it adds:
+
+- **Traefik**, one more app, which answers every name on port 443 and sends it to the right app
+  (`config/traefik/dynamic.yml`).
+- **One Let's Encrypt certificate** for `*.home.example.com`, renewed automatically. To get it, the server
+  proves it owns the name through **[deSEC](https://desec.io)**, a free DNS host with an API.
+
+What you need: a domain, a free deSEC account, and two `NS` records at your domain's DNS host that hand just
+the `home` part to deSEC. Your website and email records stay where they are. Then three settings in `.env`:
+
+```bash
+APPS_DOMAIN=home.example.com
+DESEC_TOKEN=<your deSEC token>
+COMPOSE_PROFILES=domain
+```
+
+and `sudo ./install.sh && obento up`. Step by step, including moving each device over:
+[RUNBOOK: Your own web addresses](docs/RUNBOOK.md#your-own-web-addresses-optional). Without these settings
+nothing changes: Traefik doesn't run and the Tailscale addresses above are used.
 
 ## Make it yours
 

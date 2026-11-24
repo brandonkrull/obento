@@ -235,48 +235,73 @@ else
   done
 fi
 
-log "HTTPS for the apps inside your tailnet (Tailscale serve)"
-# https port : local app port. Vaultwarden needs HTTPS; the others are nicer with it.
-SERVE_PORTS=(8443:8222 8920:8096 9200:9201)   # Vaultwarden, Jellyfin, OpenCloud
-IMMICH_URL_SHOWN=""
+log "Web addresses for the apps (Tailscale serve, or Traefik with APPS_DOMAIN)"
+TS_DOMAIN="$(tailscale status --json 2>/dev/null | jq -r '.CertDomains[0] // empty' || true)"
 if [[ -n "${APPS_DOMAIN:-}" ]]; then
-  # Traefik answers photos.<APPS_DOMAIN> on port 443, so Tailscale has to let go of it.
   [[ -n "${DESEC_TOKEN:-}" ]] || warn "APPS_DOMAIN is set but DESEC_TOKEN isn't: Traefik can't get its certificate."
   [[ ",${COMPOSE_PROFILES:-}," == *,domain,* ]] || warn "APPS_DOMAIN is set: add COMPOSE_PROFILES=domain to .env so Traefik starts."
   install -d -m 700 "$SSD_DATA/traefik"
-  if tailscale serve status 2>/dev/null | grep -q '^https://[^:]*ts\.net (tailnet only)'; then
-    timeout 60 tailscale serve --https=443 off >/dev/null || warn "Couldn't free port 443 from Tailscale serve."
-  fi
-  IMMICH_URL_SHOWN="https://photos.$APPS_DOMAIN"
+  # Traefik answers every app on 443 (config/traefik/dynamic.yml). Tailscale keeps the old Vaultwarden and
+  # Jellyfin port addresses while devices move over; OpenCloud only accepts sign-ins at one address.
+  SERVE_PORTS=(8443:8222 8920:8096)
+  SERVE_OFF=(443 9200)
+  OC_URL="https://files.$APPS_DOMAIN" OC_HOST="files.$APPS_DOMAIN" OC_IP=127.0.0.1
+  VW_URL="https://passwords.$APPS_DOMAIN"
 else
-  SERVE_PORTS=(443:2283 "${SERVE_PORTS[@]}")
+  # https port : local app port (Immich, Vaultwarden, Jellyfin, OpenCloud). Vaultwarden needs HTTPS.
+  SERVE_PORTS=(443:2283 8443:8222 8920:8096 9200:9201)
+  SERVE_OFF=()
+  OC_URL="https://$TS_DOMAIN:9200" OC_HOST="$TS_DOMAIN" OC_IP="$(tailscale ip -4 2>/dev/null | head -1 || true)"
+  VW_URL=""
 fi
-TS_DOMAIN="$(tailscale status --json 2>/dev/null | jq -r '.CertDomains[0] // empty' || true)"
+
 if ! tailscale status >/dev/null 2>&1; then
-  warn "HTTPS not set up: run 'sudo tailscale up --ssh', then re-run install.sh."
+  warn "Tailscale addresses not set up: run 'sudo tailscale up --ssh', then re-run install.sh."
 elif [[ -z "$TS_DOMAIN" ]]; then
-  warn "HTTPS not set up: turn on HTTPS Certificates in the Tailscale admin console (DNS page), then re-run install.sh."
+  warn "Tailscale addresses not set up: turn on HTTPS Certificates in the Tailscale admin console (DNS page), then re-run install.sh."
 else
+  for port in "${SERVE_OFF[@]}"; do
+    url="https://$TS_DOMAIN"; [[ $port == 443 ]] || url+=":$port"
+    if tailscale serve status 2>/dev/null | grep -qxF "$url (tailnet only)"; then
+      timeout 60 tailscale serve --https="$port" off >/dev/null || warn "Couldn't stop $url (tailscale serve)."
+    fi
+  done
   for m in "${SERVE_PORTS[@]}"; do
     timeout 60 tailscale serve --bg --yes --https="${m%%:*}" "http://localhost:${m##*:}" >/dev/null \
       || warn "Couldn't set up https://$TS_DOMAIN:${m%%:*} (tailscale serve failed)."
   done
-  log "Immich ${IMMICH_URL_SHOWN:-https://$TS_DOMAIN}  Vaultwarden https://$TS_DOMAIN:8443  Jellyfin https://$TS_DOMAIN:8920"
-  log "OpenCloud https://$TS_DOMAIN:9200"
-  # OpenCloud needs its public address, and must resolve it itself to check sign-ins (see compose).
-  TS_IP="$(tailscale ip -4 | head -1)"
+fi
+
+if [[ -n "${APPS_DOMAIN:-}" ]]; then
+  log "Immich https://photos.$APPS_DOMAIN  Vaultwarden $VW_URL  OpenCloud $OC_URL"
+  log "Jellyfin https://media.$APPS_DOMAIN  AdGuard https://adblock.$APPS_DOMAIN  Scrutiny https://drives.$APPS_DOMAIN"
+elif [[ -n "$TS_DOMAIN" ]]; then
+  log "Immich https://$TS_DOMAIN  Vaultwarden https://$TS_DOMAIN:8443  Jellyfin https://$TS_DOMAIN:8920"
+  log "OpenCloud $OC_URL"
+fi
+
+if [[ -n "${APPS_DOMAIN:-}" || -n "$TS_DOMAIN" ]]; then
+  # OpenCloud needs its public address, and must reach it itself to check sign-ins (see compose).
   # App tokens let tools such as rclone sign in without the browser (Google Drive import, RUNBOOK step 8).
   APP_TOKEN_ENV=""
   [[ "${OPENCLOUD_APP_TOKENS:-}" == true ]] && APP_TOKEN_ENV=$'\n      OC_ADD_RUN_SERVICES: auth-app\n      PROXY_ENABLE_APP_AUTH: "true"'
+  VW_ENV=""
+  [[ -n "$VW_URL" ]] && VW_ENV=$'\n  vaultwarden:\n    environment:\n      DOMAIN: '"$VW_URL"
   cat > /opt/obento/compose/docker-compose.override.yml <<EOF
-# Written by install.sh from this machine's Tailscale name and IP; don't edit.
+# Written by install.sh from APPS_DOMAIN or this machine's Tailscale name; don't edit.
 services:
   opencloud:
     environment:
-      OC_URL: https://$TS_DOMAIN:9200$APP_TOKEN_ENV
+      OC_URL: $OC_URL$APP_TOKEN_ENV
     extra_hosts:
-      - "$TS_DOMAIN:$TS_IP"
+      - "$OC_HOST:$OC_IP"$VW_ENV
 EOF
+  # OpenCloud writes its web sign-in addresses once; when OC_URL changes, remove them so it writes new ones.
+  IDP_CLIENTS="${OPENCLOUD_DATA:-/srv/opencloud/data}/idp/tmp/identifier-registration.yaml"
+  if [[ -f "$IDP_CLIENTS" ]] && ! grep -qF -- "- $OC_URL/" "$IDP_CLIENTS"; then
+    log "OpenCloud address changed to $OC_URL: everyone signs in to OpenCloud again once"
+    rm -f "$IDP_CLIENTS"
+  fi
   rm -f /etc/obento/opencloud.env
 fi
 

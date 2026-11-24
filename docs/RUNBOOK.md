@@ -168,12 +168,15 @@ Where to find them (on any device signed into Tailscale; at home you can also us
 
 | App | Address |
 |---|---|
-| Immich | https://tamago.<tailnet>.ts.net, or https://photos.<APPS_DOMAIN> with [your own web addresses](#your-own-web-addresses-optional) |
+| Immich | https://tamago.<tailnet>.ts.net |
 | Vaultwarden | https://tamago.<tailnet>.ts.net:8443 (HTTPS only) |
 | OpenCloud | https://tamago.<tailnet>.ts.net:9200 (HTTPS only) |
 | Jellyfin | https://tamago.<tailnet>.ts.net:8920 or http://tamago:8096 |
 | AdGuard Home | http://tamago:3000 |
 | Scrutiny | http://tamago:8080 |
+
+With a domain of your own these become `photos.`, `passwords.`, `files.`, `media.`, `adblock.` and `drives.`
+under it: see [Your own web addresses](#your-own-web-addresses-optional).
 
 `install.sh` sets up the HTTPS addresses with `tailscale serve` once Tailscale is connected (it prints them at
 the end). It needs **HTTPS Certificates** turned on in the Tailscale admin console (DNS page); if they're off,
@@ -242,9 +245,19 @@ HASH=$(htpasswd -nB -C 10 <user> | cut -d: -f2-) && ssh -t tamago "sudo sed -i '
 ### Your own web addresses (optional)
 
 With a domain you own, apps get addresses like `photos.home.example.com` instead of
-`tamago.<tailnet>.ts.net` ports. So far this covers Immich (`photos.`); the other apps keep their port
-addresses for now. Nothing becomes reachable from the internet: the names point at the server's Tailscale
-address, so they only work on devices signed into your tailnet.
+`tamago.<tailnet>.ts.net` ports. Nothing becomes reachable from the internet: the names point at the server's
+Tailscale address, so they only work on devices signed into your tailnet.
+
+| App | Address | Old address afterwards |
+|---|---|---|
+| Immich | `https://photos.home.example.com` | stops (Traefik takes port 443) |
+| Vaultwarden | `https://passwords.home.example.com` | keeps working while devices move over |
+| OpenCloud | `https://files.home.example.com` | stops (it signs in at one address only) |
+| Jellyfin | `https://media.home.example.com` | keeps working |
+| AdGuard Home | `https://adblock.home.example.com` | `http://tamago:3000` keeps working |
+| Scrutiny | `https://drives.home.example.com` | `http://tamago:8080` keeps working |
+
+The names and the apps they lead to are in `config/traefik/dynamic.yml`.
 
 How it works: Traefik (the `traefik` app) answers those names on port 443 with one Let's Encrypt certificate
 for `*.home.example.com`. To get it, the server proves it owns the name through **deSEC**, a free DNS host with
@@ -276,12 +289,18 @@ Below, `home.example.com` stands for whatever you choose; it becomes `APPS_DOMAI
    cd ~/obento && sudo ./install.sh && obento up
    ```
 
-   From here Immich's old address (`https://tamago.<tailnet>.ts.net`) stops working: Traefik now has port 443.
+   From here Immich's and OpenCloud's old addresses stop working (see the table above).
 4. **Check**: open `https://photos.home.example.com`. The certificate takes a minute or two the first time;
    if it doesn't load, `obento logs traefik | grep -i -E "acme|error"` says why.
-5. **Move Immich over**: in Immich, **Administration → Settings → Server → External Domain** →
-   `https://photos.home.example.com` (used in shared links). On every phone, log out of the Immich app and log
-   back in with the new address.
+5. **Move each app over**, on every device (docs/MAC-SETUP.md and docs/IOS-SETUP.md list the apps):
+   - **Immich**: **Administration → Settings → Server → External Domain** → `https://photos.home.example.com`
+     (used in shared links). On every phone, log out of the Immich app and log back in with the new address.
+   - **OpenCloud**: everyone signs in again once (`install.sh` resets OpenCloud's sign-in addresses when its
+     address changes). In the desktop app, remove the account and add it again with the new address; on
+     phones, log out and back in.
+   - **Bitwarden**: log out, change the self-hosted server URL to `https://passwords.home.example.com`, log in.
+     The vault is kept on each device, so nothing is lost meanwhile.
+   - **Jellyfin**: add the new address as a server in the app and sign in.
 
 The certificate renews itself. If the server's Tailscale IP ever changes, update the `*` record at deSEC.
 
@@ -393,12 +412,14 @@ copied into OpenCloud's data folder directly: OpenCloud only knows about files u
    sudo docker exec opencloud opencloud auth-app create --user-name=<your OpenCloud user> --expiration=72h
    read -rs TOKEN                     # paste the token, then Enter (nothing is shown)
    export RCLONE_CONFIG_OPENCLOUD_TYPE=webdav RCLONE_CONFIG_OPENCLOUD_VENDOR=owncloud \
-     RCLONE_CONFIG_OPENCLOUD_URL=https://tamago.<tailnet>.ts.net:9200/remote.php/webdav \
+     RCLONE_CONFIG_OPENCLOUD_URL=<OpenCloud's address>/remote.php/webdav \
      RCLONE_CONFIG_OPENCLOUD_USER=<your OpenCloud user> \
      RCLONE_CONFIG_OPENCLOUD_PASS="$(printf %s "$TOKEN" | rclone obscure -)"
    unset TOKEN
    rclone lsd opencloud:              # lists your OpenCloud folders
    ```
+   OpenCloud's address is `https://files.<APPS_DOMAIN>` with your own web addresses, otherwise
+   `https://tamago.<tailnet>.ts.net:9200`.
 6. **Upload into OpenCloud** (same shell, so the settings above still apply), then check:
    ```bash
    rclone copy /tank/import/gdrive-$USER "opencloud:Google Drive" --progress --transfers 4 \
