@@ -134,7 +134,9 @@ sudo systemctl status smartmontools        # you should get a "test" ntfy alert 
 
 Install the **ntfy** app on your phone and subscribe to your `NTFY_TOPIC`.
 
-Email too (optional): set `NTFY_EMAIL` in `.env` and re-run `sudo ./install.sh`. High and urgent alerts (drive,
+Email too (optional): ntfy.sh only emails for signed-in accounts. Create a free account at https://ntfy.sh/account,
+verify your email address there, and create an access token (**Account → Access tokens**). Put the address in
+`NTFY_EMAIL` and the token in `NTFY_TOKEN` in `.env`, then re-run `sudo ./install.sh`. Free accounts get 5 emails a day. High and urgent alerts (drive,
 backup, pool, UPS problems) and Scrutiny's warnings are then also emailed; routine ones stay notification-only.
 Test it with `sudo homeserver-notify high "Email test" "If this arrived by email, alerts will too."`
 

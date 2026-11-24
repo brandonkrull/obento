@@ -30,9 +30,12 @@ notify() {
   [[ -n "${NTFY_TOKEN:-}" ]] && auth=(-H "Authorization: Bearer $NTFY_TOKEN")
   # Email only what needs action, to stay within ntfy's daily email limit.
   [[ -n "${NTFY_EMAIL:-}" && "$prio" =~ ^(high|urgent)$ ]] && email=(-H "Email: $NTFY_EMAIL")
-  curl -fsS -m 15 "${auth[@]}" "${email[@]}" \
+  # Never fail the caller, but log why ntfy refused (e.g. email needs an account) instead of hiding it.
+  local resp
+  resp="$(curl -sS -m 15 -w '\n%{http_code}' "${auth[@]}" "${email[@]}" \
     -H "Title: [$(hostname)] $title" -H "Priority: $prio" \
-    -d "$msg" "${NTFY_URL%/}/$NTFY_TOPIC" >/dev/null || true
+    -d "$msg" "${NTFY_URL%/}/$NTFY_TOPIC" 2>&1)" || true
+  [[ "${resp##*$'\n'}" == 2* ]] || logger -t homeserver "ntfy send failed: ${resp//$'\n'/ }" || true
 }
 
 require_root() {

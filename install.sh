@@ -150,16 +150,16 @@ SCRUTINY_MARK="# Written by homeserver install.sh from NTFY_* in .env; edits are
 install -d -m 755 "$SSD_DATA/scrutiny/config"
 if [[ -f "$SCRUTINY_CONF" ]] && ! head -1 "$SCRUTINY_CONF" | grep -qxF "$SCRUTINY_MARK"; then
   warn "Kept your own $SCRUTINY_CONF; add an ntfy URL under notify.urls yourself."
-elif [[ -n "${NTFY_TOKEN:-}" ]]; then
-  warn "Scrutiny alerts not set up: NTFY_TOKEN isn't supported here yet."
 else
   tmp="$(mktemp)"
-  # Shoutrrr ntfy URL: host and topic, HTTPS by default; email= also emails it (see NTFY_EMAIL).
-  email_opt=""
+  # Shoutrrr ntfy URL: host and topic, HTTPS by default. A token goes in as the password with an empty
+  # username (ntfy accepts that); email= also emails it (see NTFY_EMAIL).
+  auth_opt="" email_opt=""
+  [[ -n "${NTFY_TOKEN:-}" ]] && auth_opt=":${NTFY_TOKEN}@"
   [[ -n "${NTFY_EMAIL:-}" ]] && email_opt="&email=${NTFY_EMAIL//@/%40}"
-  printf '%s\nnotify:\n  urls:\n    - "ntfy://%s/%s?title=%s%s"\n' \
-    "$SCRUTINY_MARK" "$(sed -E 's#^https?://##; s#/+$##' <<<"$NTFY_URL")" "$NTFY_TOPIC" "Scrutiny%20on%20$(hostname)" \
-    "$email_opt" > "$tmp"
+  printf '%s\nnotify:\n  urls:\n    - "ntfy://%s%s/%s?title=%s%s"\n' \
+    "$SCRUTINY_MARK" "$auth_opt" "$(sed -E 's#^https?://##; s#/+$##' <<<"$NTFY_URL")" "$NTFY_TOPIC" \
+    "Scrutiny%20on%20$(hostname)" "$email_opt" > "$tmp"
   if ! cmp -s "$tmp" "$SCRUTINY_CONF"; then
     install -m 600 "$tmp" "$SCRUTINY_CONF"
     # Scrutiny reads its config at start; restart it if it's already running.
