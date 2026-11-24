@@ -31,6 +31,17 @@ restart_if_stale() {
   done
 }
 
+# apt-get that waits (up to ~15 minutes) for the automatic updates instead of failing on apt's lock.
+apt-get() {
+  local i
+  for i in {1..60}; do
+    pgrep -x apt.systemd.dai >/dev/null || break
+    (( i > 1 )) || log "Waiting for automatic updates to finish"
+    sleep 10
+  done
+  command apt-get -o DPkg::Lock::Timeout=300 "$@"
+}
+
 # The timers (backup 03:30, health report Monday 08:00, ...) follow the server's clock; TZ alone only reaches the apps.
 if [[ -n "${TZ:-}" && -f "/usr/share/zoneinfo/$TZ" ]]; then
   timedatectl set-timezone "$TZ"
