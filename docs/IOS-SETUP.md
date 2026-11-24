@@ -20,6 +20,20 @@ Every app is reachable only inside your tailnet, at home and away, so start here
 Tailscale needs to be connected for the apps below to work. Turning on **VPN On Demand** (Settings → VPN →
 Tailscale → ⓘ) keeps it connected automatically.
 
+### Ad blocking, everywhere
+
+Nothing to set up on the phone: while Tailscale is connected and **Use Tailscale DNS** is on, websites and apps
+look up addresses through the server's ad blocker (AdGuard), on any Wi-Fi or mobile data. At home the Wi-Fi does
+the same even with Tailscale off.
+
+- Check it: with Tailscale connected, open https://d3ward.github.io/toolz/adblock in Safari; most tests should
+  show as blocked. Turn Tailscale off and the score drops (away from home).
+- If a site or app breaks because something it needs is blocked, the admin can allow it in AdGuard
+  (http://tamago:3000 → **Query log** → **Unblock**).
+- Family members you only *shared* tamago with (instead of inviting them to the tailnet) don't get this: ad
+  blocking comes with the tailnet's DNS settings, which shared devices don't use.
+- If the server is off, websites won't load while Tailscale is on: turn Tailscale off until it's back.
+
 ## 2. Apps
 
 | What | App Store app | Server address to enter |
@@ -76,5 +90,7 @@ Either works; try the other if a video won't play.
 ## When something doesn't load
 
 - Check Tailscale is connected (the VPN icon at the top of the screen, or open the Tailscale app).
+- No websites load at all with Tailscale on, but they do with it off: the server (and its ad blocker) is down.
+  Leave Tailscale off until it's back.
 - Try the address in Safari: if Safari can't reach it either, the problem is Tailscale or the server, not the app.
 - On the server: `tamago status` shows which apps are running, `tamago logs <app>` shows why one isn't.
