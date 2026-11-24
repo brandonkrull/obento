@@ -24,6 +24,20 @@ Every app is reachable only inside your tailnet, so start here.
 3. Leave **Use Tailscale DNS** on (menu bar icon → Settings), so names like `tamago` work.
 4. Check: `ping -c 3 tamago` should get replies.
 
+### Ad blocking, everywhere
+
+Nothing to set up on the Mac: while Tailscale is connected and **Use Tailscale DNS** is on, every app and browser
+looks up addresses through the server's ad blocker (AdGuard), on any network. At home the Wi-Fi does the same
+even with Tailscale off.
+
+- Check it: `dig +short doubleclick.net` prints `0.0.0.0`, and `tailscale dns status` lists the server's
+  Tailscale IP under **Resolvers**. Or open https://d3ward.github.io/toolz/adblock in a browser.
+- If a site or app breaks because something it needs is blocked, the admin can allow it in AdGuard
+  (http://tamago:3000 → **Query log** → **Unblock**).
+- Macs you only *shared* tamago with (instead of inviting to the tailnet) don't get this: ad blocking comes with
+  the tailnet's DNS settings, which shared devices don't use.
+- If the server is off, websites won't load while Tailscale is on: quit Tailscale until it's back.
+
 ## 2. Command line access to the server
 
 The server runs Tailscale SSH, so any Mac on your tailnet can sign in without copying a key. Add a shortcut so
@@ -86,5 +100,7 @@ API key from **Account Settings → API Keys**).
 ## When something doesn't load
 
 - Check Tailscale is connected (menu bar icon) and `ping tamago` works.
+- No websites load at all with Tailscale on, but they do with it off: the server (and its ad blocker) is down.
+  Quit Tailscale until it's back.
 - On the server: `tamago status` shows which apps are running, `tamago logs <app>` shows why one isn't.
 - HTTPS addresses are set up by `sudo ./install.sh` on the server; it prints them at the end.
