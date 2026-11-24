@@ -247,21 +247,22 @@ addresses for now. Nothing becomes reachable from the internet: the names point 
 address, so they only work on devices signed into your tailnet.
 
 How it works: Traefik (the `traefik` app) answers those names on port 443 with one Let's Encrypt certificate
-for `*.home.example.com`. To get it, the server proves it owns the domain through **deSEC**, a free DNS host
-with an API. Your domain's own DNS stays where it is (Squarespace, for example): you only add two records.
+for `*.home.example.com`. To get it, the server proves it owns the name through **deSEC**, a free DNS host with
+an API. Only the `home` part is handed to deSEC; the rest of your domain (website, email) stays where it is.
 Below, `home.example.com` stands for whatever you choose; it becomes `APPS_DOMAIN`.
 
-1. **deSEC**: sign up at desec.io → **Domains → +** → create a free dynDNS name, e.g.
-   `obento-<yourname>.dedyn.io` → **Token Management → +** → copy the token (shown once).
-2. **Your domain's DNS** (Squarespace: **Domains** → your domain → **DNS** → **Custom records**). The Host is
-   the part before your domain:
+1. **deSEC**: sign up at desec.io → **Domains → +** → enter `home.example.com` (the full name) → in that
+   domain, add a record: Subname `*`, Type `A`, value the server's Tailscale IP (`tailscale ip -4` on the
+   server) → **Token Management → +** → copy the token (shown once).
+2. **Hand `home` to deSEC** at your domain's DNS host (Squarespace: **Domains** → your domain → **DNS** →
+   **Custom records**), two records:
 
    | Host | Type | Data |
    |---|---|---|
-   | `*.home` | A | the server's Tailscale IP (`tailscale ip -4` on the server) |
-   | `_acme-challenge.home` | CNAME | `_acme-challenge.obento-<yourname>.dedyn.io` |
+   | `home` | NS | `ns1.desec.io` |
+   | `home` | NS | `ns2.desec.org` |
 
-   If wildcards aren't accepted, add `photos.home` as the A record instead (and one per app as more move).
+   This needs DNSSEC off for the domain at Squarespace (check: `dig +short DS example.com` prints nothing).
    Check from the Mac after a few minutes: `dig +short photos.home.example.com` prints the Tailscale IP.
 3. **Settings** in `~/obento/.env` on the server, then install and start:
 
@@ -282,7 +283,7 @@ Below, `home.example.com` stands for whatever you choose; it becomes `APPS_DOMAI
    `https://photos.home.example.com` (used in shared links). On every phone, log out of the Immich app and log
    back in with the new address.
 
-The certificate renews itself. If the server's Tailscale IP ever changes, update the A record.
+The certificate renews itself. If the server's Tailscale IP ever changes, update the `*` record at deSEC.
 
 ## 4. Drives arrive → burn-in (~3 days)
 

@@ -146,7 +146,7 @@ services:
     restart: always
 
   # ---------------------------------------------------------------- Your own web addresses (optional)
-  # photos.<APPS_DOMAIN> and friends, with one Let's Encrypt wildcard certificate proved through deSEC
+  # photos.<APPS_DOMAIN> and friends, with one Let's Encrypt wildcard certificate proved at deSEC, which hosts APPS_DOMAIN
   # (RUNBOOK "Your own web addresses"). Only starts with COMPOSE_PROFILES=domain in .env.
   traefik:
     container_name: traefik
