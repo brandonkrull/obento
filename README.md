@@ -24,6 +24,7 @@ scripts/
 config/                    smartd, sanoid, NUT (UPS), unattended-upgrades, sshd, systemd timers, pi
 docs/DRIVE-PLAN.md         why the storage is set up this way (incl. the Akita NAS lessons)
 docs/RUNBOOK.md            step-by-step: install → apps → burn-in → pool → migrate → backup → ops
+docs/MAC-SETUP.md          setting up a Mac to use the server: Tailscale, ssh, and the apps
 ```
 
 Start with **docs/RUNBOOK.md**.

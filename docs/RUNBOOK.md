@@ -150,6 +150,8 @@ pi -p "Say hello"
 
 ## 3. Apps (on the SSD until the drives arrive)
 
+To set up a Mac to use them (Tailscale, `ssh tamago`, OpenCloud, Bitwarden, Jellyfin), see `docs/MAC-SETUP.md`.
+
 ```bash
 tamago up        # starts every app (asks for your password); 'tamago help' lists the other commands
 tamago status
