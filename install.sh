@@ -36,7 +36,7 @@ apt-get update
 DEBIAN_FRONTEND=noninteractive apt-get install -y \
   zfsutils-linux smartmontools sanoid restic nut-client nut-server \
   curl jq unattended-upgrades ufw lm-sensors e2fsprogs python3 ca-certificates \
-  libnss-resolve
+  libnss-resolve neovim rclone
 # Installing libnss-resolve restarts systemd-resolved; wait for DNS before downloading anything else.
 for _ in {1..30}; do getent hosts download.docker.com >/dev/null && break; sleep 1; done
 

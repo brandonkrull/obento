@@ -304,7 +304,7 @@ copied into OpenCloud's data folder directly: OpenCloud only knows about files u
    next step. (While the app is in "Testing", sign-ins last 7 days; enough for the import.)
 2. **Connect Drive** (on the server; the browser sign-in happens on the Mac):
    ```bash
-   sudo apt install rclone            # on the Mac too: brew install rclone
+   # rclone is installed by install.sh; on the Mac: brew install rclone
    rclone config                      # n (new) → name: gdrive → drive → paste client ID and secret
                                       # scope: 2 (drive.readonly) → leave the rest default
                                       # "Use web browser to automatically authenticate?" → n
