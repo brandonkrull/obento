@@ -104,6 +104,32 @@ services:
       - "8096:8096"
     restart: always
 
+  # ---------------------------------------------------------------- Files (Google Drive replacement)
+  opencloud:
+    container_name: opencloud
+    image: opencloudeu/opencloud:4      # production (stable) line; 'tamago update' pulls 4.x fixes
+    user: "1000:1000"                   # owns ${SSD_DATA}/opencloud and OPENCLOUD_DATA (install.sh)
+    entrypoint: ["/bin/sh", "-c"]
+    # init writes the config with random secrets on first start and fails harmlessly afterwards
+    command: ["opencloud init || true; opencloud server"]
+    env_file:
+      - path: /etc/homeserver/opencloud.env   # OC_URL, written by install.sh from the Tailscale name
+        required: false
+    environment:
+      PROXY_HTTP_ADDR: "0.0.0.0:9200"
+      PROXY_TLS: "false"                # Tailscale serve terminates HTTPS
+      OC_INSECURE: "false"
+      IDM_ADMIN_PASSWORD: ${OPENCLOUD_ADMIN_PASSWORD:-}   # first start only; change it later in OpenCloud
+      IDM_CREATE_DEMO_USERS: "false"
+      OC_LOG_LEVEL: warn
+      TZ: ${TZ}
+    volumes:
+      - ${SSD_DATA}/opencloud/config:/etc/opencloud
+      - ${OPENCLOUD_DATA:-/srv/opencloud/data}:/var/lib/opencloud
+    ports:
+      - "127.0.0.1:9201:9200"           # only reachable through https://tamago.<tailnet>.ts.net:9200
+    restart: always
+
   # ---------------------------------------------------------------- Drive health dashboard
   scrutiny:
     container_name: scrutiny

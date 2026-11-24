@@ -1,8 +1,8 @@
 # homeserver
 
 One repo that turns a fresh **Ubuntu Server 24.04 LTS** install into the family NAS:
-Immich (photos), Vaultwarden (passwords), AdGuard Home (DNS blocking), Jellyfin (media),
-Scrutiny (drive dashboard), plus ZFS, monitoring, snapshots, off-site backup and UPS shutdown.
+Immich (photos), Vaultwarden (passwords), OpenCloud (files, a Google Drive replacement),
+AdGuard Home (DNS blocking), Jellyfin (media), Scrutiny (drive dashboard), plus ZFS, monitoring, snapshots, off-site backup and UPS shutdown.
 
 Hardware: Core Ultra 5 250K Plus · ASUS B860M-A · 32 GB DDR5 · 512 GB NVMe (OS, apps, Immich DB) ·
 Jonsbo N6 · 2× WD Ultrastar HC550 18 TB recertified (ZFS mirror) · APC BE600M1.

@@ -4,7 +4,7 @@
 #   sudo scripts/backup.sh            # run a backup now
 #   sudo scripts/backup.sh --verify   # deep check: read 5% of the repo's data back from B2
 #
-# What gets backed up: Immich originals + a fresh Postgres dump, Vaultwarden, the repo config.
+# What gets backed up: Immich originals + a fresh Postgres dump, Vaultwarden, OpenCloud, the repo config.
 # Thumbnails/transcodes are skipped (Immich regenerates them).
 set -euo pipefail
 source "$(dirname "$(readlink -f "$0")")/lib.sh"
@@ -38,7 +38,9 @@ find "$DUMP_DIR" -name 'immich-*.sql.gz' -mtime +14 -delete
 
 PATHS=("$IMMICH_UPLOAD_LOCATION/library" "$IMMICH_UPLOAD_LOCATION/upload" "$IMMICH_UPLOAD_LOCATION/profile"
        "$DUMP_DIR" /etc/homeserver /opt/homeserver)
-for p in "$SSD_DATA/vaultwarden" "/$POOL_NAME/vaultwarden"; do [[ -d "$p" ]] && PATHS+=("$p"); done
+for p in "$SSD_DATA/vaultwarden" "/$POOL_NAME/vaultwarden" "$SSD_DATA/opencloud/config" "${OPENCLOUD_DATA:-}"; do
+  [[ -n "$p" && -d "$p" ]] && PATHS+=("$p")
+done
 EXISTING=(); for p in "${PATHS[@]}"; do [[ -e "$p" ]] && EXISTING+=("$p"); done
 
 log "restic backup"

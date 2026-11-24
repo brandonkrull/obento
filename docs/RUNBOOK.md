@@ -161,6 +161,7 @@ Where to find them (on any device signed into Tailscale; at home you can also us
 |---|---|
 | Immich | https://tamago.<tailnet>.ts.net |
 | Vaultwarden | https://tamago.<tailnet>.ts.net:8443 (HTTPS only) |
+| OpenCloud | https://tamago.<tailnet>.ts.net:9200 (HTTPS only) |
 | Jellyfin | https://tamago.<tailnet>.ts.net:8920 or http://tamago:8096 |
 | AdGuard Home | http://tamago:3000 (first-run setup) |
 | Scrutiny | http://tamago:8080 |
@@ -173,6 +174,10 @@ the end). It needs **HTTPS Certificates** turned on in the Tailscale admin conso
   and re-run `sudo ./install.sh` (copies .env). Administration → Settings → Machine Learning: OpenVINO is used automatically.
   Video transcoding → hardware acceleration: **Quick Sync**.
 - AdGuard: http://tamago:3000 setup wizard. Later point your router's DNS at the server's LAN IP.
+- OpenCloud: set `OPENCLOUD_ADMIN_PASSWORD` in `.env` **before** its first start (it's only used then), sign in
+  as `admin`, then create an account per person under **Admin settings → Users**. Install the OpenCloud desktop
+  and phone apps and point them at https://tamago.<tailnet>.ts.net:9200. It needs the HTTPS address, so it only
+  works once Tailscale is up and `install.sh` has run since.
 - Vaultwarden: sign-ups are off by default. To create the family's accounts, run `tamago signups on`,
   create them at https://tamago.<tailnet>.ts.net:8443, then `tamago signups off` (any `tamago up` also turns them off).
 - Test with a few hundred photos (phone app → backup).
@@ -198,20 +203,23 @@ sudo /opt/homeserver/scripts/create-pool.sh /dev/disk/by-id/ata-..._AAAA /dev/di
 /opt/homeserver/scripts/print-scrutiny-devices.sh   # paste into ~/homeserver/compose scrutiny devices:, sudo ./install.sh, tamago up scrutiny
 ```
 
-## 6. Move Immich (and Vaultwarden) onto the pool
+## 6. Move Immich, Vaultwarden and OpenCloud onto the pool
 
 ```bash
-tamago stop immich-server immich-machine-learning vaultwarden
+tamago stop immich-server immich-machine-learning vaultwarden opencloud
 sudo rsync -aHAX --info=progress2 /srv/immich/library/ /tank/photos/
 sudo rsync -aHAX /srv/vaultwarden/ /tank/vaultwarden/
+sudo rsync -aHAX --info=progress2 /srv/opencloud/data/ /tank/opencloud/
 # verify BEFORE switching (lesson: never trust a silent copy)
 sudo rsync -aHAXn --checksum --itemize-changes /srv/immich/library/ /tank/photos/ | head   # must print nothing
 sudo rsync -aHAXn --checksum --itemize-changes /srv/vaultwarden/ /tank/vaultwarden/ | head
+sudo rsync -aHAXn --checksum --itemize-changes /srv/opencloud/data/ /tank/opencloud/ | head
 ```
 
 Edit `.env`: `IMMICH_UPLOAD_LOCATION=/tank/photos`, `VAULTWARDEN_DATA=/tank/vaultwarden`,
-`MEDIA_LOCATION=/tank/media` → `sudo ./install.sh` → `tamago up`.
-Check photos load, then delete the old copies on the SSD a week later.
+`OPENCLOUD_DATA=/tank/opencloud`, `MEDIA_LOCATION=/tank/media` → `sudo ./install.sh` → `tamago up`.
+Check photos and files load, then delete the old copies on the SSD a week later.
+OpenCloud's config (`/srv/opencloud/config`, small, holds its keys) stays on the SSD and is backed up nightly.
 
 ## 7. Import Google Photos and verify
 

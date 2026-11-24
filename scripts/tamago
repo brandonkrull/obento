@@ -8,7 +8,7 @@ usage() {
   cat <<'EOF'
 Usage: tamago <command> [app...]
 
-Start, stop and check the home server's apps (Immich, Vaultwarden, AdGuard, Jellyfin, Scrutiny).
+Start, stop and check the home server's apps (Immich, Vaultwarden, OpenCloud, AdGuard, Jellyfin, Scrutiny).
 Apps are the service names in docker-compose.yml; leave them out to act on all of them.
 
 Commands:

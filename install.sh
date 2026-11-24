@@ -111,6 +111,11 @@ log "Directories on the SSD"
 install -d -m 755 "$SSD_DATA"/{immich,vaultwarden,adguard,jellyfin,scrutiny,media}
 ln -sf /etc/homeserver/.env /opt/homeserver/compose/.env
 install -d -m 755 "$IMMICH_UPLOAD_LOCATION" "$IMMICH_DB_LOCATION"
+# OpenCloud runs as 1000:1000 (see compose); its config holds generated secrets.
+install -d -m 700 -o 1000 -g 1000 "$SSD_DATA/opencloud" "$SSD_DATA/opencloud/config" "${OPENCLOUD_DATA:-$SSD_DATA/opencloud/data}"
+case "${OPENCLOUD_ADMIN_PASSWORD:-}" in
+  ""|change-me*) warn "Set OPENCLOUD_ADMIN_PASSWORD in .env before OpenCloud's first start." ;;
+esac
 
 log "Snapshots config (applies once the pool exists)"
 install -m 644 "$REPO_DIR/config/sanoid.conf" /etc/sanoid/sanoid.conf 2>/dev/null || {
@@ -146,7 +151,7 @@ fi
 
 log "HTTPS for the apps inside your tailnet (Tailscale serve)"
 # https port : local app port. Vaultwarden needs HTTPS; the others are nicer with it.
-SERVE_PORTS=(443:2283 8443:8222 8920:8096)   # Immich, Vaultwarden, Jellyfin
+SERVE_PORTS=(443:2283 8443:8222 8920:8096 9200:9201)   # Immich, Vaultwarden, Jellyfin, OpenCloud
 TS_DOMAIN="$(tailscale status --json 2>/dev/null | jq -r '.CertDomains[0] // empty' || true)"
 if ! tailscale status >/dev/null 2>&1; then
   warn "HTTPS not set up: run 'sudo tailscale up --ssh', then re-run install.sh."
@@ -158,6 +163,10 @@ else
       || warn "Couldn't set up https://$TS_DOMAIN:${m%%:*} (tailscale serve failed)."
   done
   log "Immich https://$TS_DOMAIN  Vaultwarden https://$TS_DOMAIN:8443  Jellyfin https://$TS_DOMAIN:8920"
+  log "OpenCloud https://$TS_DOMAIN:9200"
+  # OpenCloud must know its public address for sign-in redirects.
+  printf 'OC_URL=https://%s:9200\n' "$TS_DOMAIN" > /etc/homeserver/opencloud.env
+  chmod 600 /etc/homeserver/opencloud.env
 fi
 
 homeserver-notify default "Bootstrap complete" "install.sh finished on $(hostname)"

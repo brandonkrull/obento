@@ -31,6 +31,7 @@ zpool create -f \
 log "Datasets"
 zfs create -o recordsize=1M "$POOL_NAME/photos"      # Immich library (originals + thumbs)
 zfs create                  "$POOL_NAME/vaultwarden"
+zfs create                  "$POOL_NAME/opencloud"   # OpenCloud files (Drive replacement)
 zfs create                  "$POOL_NAME/backups"     # DB dumps, laptop backups
 zfs create -o recordsize=1M "$POOL_NAME/media"       # Jellyfin
 
