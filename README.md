@@ -118,7 +118,8 @@ What it adds:
 
 - **Traefik**, one more app, which answers every name on port 443 and sends it to the right app
   (`config/traefik/dynamic.yml`).
-- **A portal** at `https://home.example.com` with a tile per app and a status light (`config/homepage/`).
+- **A portal** at `https://home.example.com` with a tile per app and a status light (`config/homepage/`;
+  `PORTAL_TITLE` and `PORTAL_LOGO` in `.env` add your own name and image).
 - **One Let's Encrypt certificate** for `home.example.com` and `*.home.example.com`, renewed automatically. To get it, the server
   proves it owns the name through **[deSEC](https://desec.io)**, a free DNS host with an API.
 

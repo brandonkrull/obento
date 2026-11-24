@@ -1,5 +1,6 @@
 # The portal at https://<APPS_DOMAIN> (Homepage, gethomepage.dev). install.sh copies these files to the server;
-# edit them here, then 'obento update && obento restart portal'.
+# edit them here, then 'obento update && obento restart portal'. Colors and fonts: custom.css.
+# PORTAL_TITLE and PORTAL_LOGO in .env change the title and add a logo.
 title: obento
 theme: dark
 color: slate

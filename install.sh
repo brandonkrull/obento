@@ -241,9 +241,24 @@ if [[ -n "${APPS_DOMAIN:-}" ]]; then
   [[ -n "${DESEC_TOKEN:-}" ]] || warn "APPS_DOMAIN is set but DESEC_TOKEN isn't: Traefik can't get its certificate."
   [[ ",${COMPOSE_PROFILES:-}," == *,domain,* ]] || warn "APPS_DOMAIN is set: add COMPOSE_PROFILES=domain to .env so Traefik starts."
   install -d -m 700 "$SSD_DATA/traefik"
-  # The portal's tiles; edits belong in config/homepage (these copies are overwritten).
+  # The portal's tiles and look; edits belong in config/homepage (these copies are overwritten).
+  # PORTAL_TITLE and PORTAL_LOGO add your own name and image without putting them in the repo.
   install -d -m 755 "$SSD_DATA/portal"
-  for f in "$REPO_DIR"/config/homepage/*.yaml; do install_conf 644 root "$f" "$SSD_DATA/portal/$(basename "$f")"; done
+  portal_tmp="$(mktemp -d)"
+  cp "$REPO_DIR"/config/homepage/* "$portal_tmp"/
+  if [[ -n "${PORTAL_TITLE:-}" ]]; then
+    sed -i "s|^title: .*|title: \"${PORTAL_TITLE//\"/}\"|" "$portal_tmp/settings.yaml"
+  fi
+  if [[ -n "${PORTAL_LOGO:-}" ]]; then
+    printf 'favicon: %s\n' "$PORTAL_LOGO" >> "$portal_tmp/settings.yaml"
+  fi
+  {
+    if [[ -n "${PORTAL_LOGO:-}" ]]; then printf -- '- logo:\n    icon: %s\n' "$PORTAL_LOGO"; fi
+    if [[ -n "${PORTAL_TITLE:-}" ]]; then printf -- '- greeting:\n    text_size: xl\n    text: "%s"\n' "${PORTAL_TITLE//\"/}"; fi
+    cat "$REPO_DIR/config/homepage/widgets.yaml"
+  } > "$portal_tmp/widgets.yaml"
+  for f in "$portal_tmp"/*; do install_conf 644 root "$f" "$SSD_DATA/portal/$(basename "$f")"; done
+  rm -rf "$portal_tmp"
   # Traefik answers every app on 443 (config/traefik/dynamic.yml), so the Tailscale port addresses go away.
   SERVE_PORTS=()
   SERVE_OFF=(443 8443 8920 9200)

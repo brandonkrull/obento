@@ -1,0 +1,131 @@
+/* The portal's look: black line art on white (near-black in dark mode), flat outlined tiles, Arial.
+   Homepage loads this file as-is; change colors in :root. */
+:root {
+  --portal-bg: #ffffff;
+  --portal-fg: #171717;
+  --portal-fg-rgb: 23, 23, 23;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --portal-bg: #0a0a0a;
+    --portal-fg: #ededed;
+    --portal-fg-rgb: 237, 237, 237;
+  }
+  /* A black drawing on white becomes a white drawing on black, as on onigiricapital.com; the same for the
+     app icons, so black ones stay visible. */
+  .information-widget-logo img {
+    filter: invert(1);
+  }
+  .service-icon img {
+    filter: grayscale(1) invert(1) contrast(1.1) !important;
+  }
+  .service-card:hover .service-icon img {
+    filter: grayscale(1) contrast(1.1) !important;
+  }
+}
+
+html,
+body,
+#page_wrapper,
+#inner_wrapper {
+  background: var(--portal-bg) !important;
+  background-image: none !important;
+}
+
+body,
+#page_wrapper {
+  color: var(--portal-fg) !important;
+  font-family: Arial, Helvetica, sans-serif !important;
+  -webkit-font-smoothing: antialiased;
+}
+
+#page_wrapper * {
+  font-family: inherit !important;
+}
+
+/* Group headings */
+.service-group-name {
+  color: var(--portal-fg) !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.01em;
+}
+
+/* App tiles: outlined like the drawing; they invert on hover. */
+.service-card {
+  background: var(--portal-bg) !important;
+  border: 2px solid var(--portal-fg) !important;
+  border-radius: 18px !important;
+  box-shadow: none !important;
+  transition: background 0.15s, color 0.15s;
+}
+
+.service-name,
+.service-title-text {
+  color: var(--portal-fg) !important;
+  font-weight: 700 !important;
+}
+
+.service-description {
+  color: rgba(var(--portal-fg-rgb), 0.6) !important;
+}
+
+/* App icons in black and white, in color on hover (Material icons are drawn in the text color) */
+.service-icon img {
+  filter: grayscale(1) contrast(1.1);
+  transition: filter 0.15s;
+}
+
+.service-icon div {
+  background: var(--portal-fg) !important;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .service-card:hover {
+    background: var(--portal-fg) !important;
+  }
+  .service-card:hover .service-name,
+  .service-card:hover .service-title-text,
+  .service-card:hover .service-description {
+    color: var(--portal-bg) !important;
+  }
+  .service-card:hover .service-icon img {
+    filter: none;
+  }
+  .service-card:hover .service-icon div {
+    background: var(--portal-bg) !important;
+  }
+}
+
+/* Status badge: keep its green/red text, drop the colored box */
+.service-tag,
+.service-site-monitor > div {
+  background: transparent !important;
+  border: 1px solid rgba(var(--portal-fg-rgb), 0.25) !important;
+  border-radius: 999px !important;
+}
+
+/* CPU, memory, disk bars */
+#information-widgets,
+#information-widgets * {
+  color: var(--portal-fg) !important;
+}
+
+.resource-usage {
+  background: rgba(var(--portal-fg-rgb), 0.12) !important;
+}
+
+.resource-usage > div {
+  background: var(--portal-fg) !important;
+}
+
+/* Title next to the logo */
+.information-widget-greeting span {
+  color: var(--portal-fg) !important;
+  font-weight: 700 !important;
+}
+
+#footer,
+#footer * {
+  color: rgba(var(--portal-fg-rgb), 0.6) !important;
+}
