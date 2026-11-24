@@ -15,7 +15,7 @@ Every app is reachable only inside your tailnet, at home and away, so start here
    Family members sign in with their own account once they've been invited to the tailnet
    (Tailscale admin console → **Users** → **Invite**), or you share tamago with them (**Machines** → tamago → **Share**).
 3. In Tailscale's settings, leave **Use Tailscale DNS** on so `tamago` addresses work.
-4. Check: open `https://tamago.<tailnet>.ts.net` in Safari. You should see Immich's sign-in page.
+4. Check: open `https://tamago.<tailnet>.ts.net:9200` in Safari. You should see OpenCloud's sign-in page.
 
 Tailscale needs to be connected for the apps below to work. Turning on **VPN On Demand** (Settings → VPN →
 Tailscale → ⓘ) keeps it connected automatically.
@@ -41,7 +41,7 @@ Wi-Fi or mobile data.
 
 | What | App Store app | Server address to enter |
 |---|---|---|
-| Photos | **Immich** | `https://tamago.<tailnet>.ts.net` |
+| Photos | **Immich** | `https://photos.<your domain>` if the server has its own addresses, otherwise `https://tamago.<tailnet>.ts.net` |
 | Files (Google Drive replacement) | **OpenCloud** | `https://tamago.<tailnet>.ts.net:9200` |
 | Passwords | **Bitwarden** | `https://tamago.<tailnet>.ts.net:8443` |
 | Media | **Jellyfin** (or **Swiftfin**, a native player) | `https://tamago.<tailnet>.ts.net:8920` |

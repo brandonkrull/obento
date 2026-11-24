@@ -16,7 +16,7 @@ specific to that build; [Make it yours](#make-it-yours) lists each one.
 
 | App | What it's for | How you reach it |
 |---|---|---|
-| [Immich](https://immich.app) | Photo and video backup from phones (a Google Photos replacement) | `https://tamago.<tailnet>.ts.net` |
+| [Immich](https://immich.app) | Photo and video backup from phones (a Google Photos replacement) | `https://tamago.<tailnet>.ts.net`, or `https://photos.<your domain>` |
 | [Vaultwarden](https://github.com/dani-garcia/vaultwarden) | Family password manager; works with the Bitwarden apps | `https://tamago.<tailnet>.ts.net:8443` |
 | [OpenCloud](https://opencloud.eu) | Files synced across devices (a Google Drive replacement) | `https://tamago.<tailnet>.ts.net:9200` |
 | [Jellyfin](https://jellyfin.org) | Movies, shows and music | `https://tamago.<tailnet>.ts.net:8920` |
@@ -65,6 +65,7 @@ case, 2× WD Ultrastar HC550 18 TB (recertified), APC BE600M1 UPS.
 | Required | An ntfy topic: a long random name on ntfy.sh, or your own ntfy server | Where every alert goes; subscribe to it in the ntfy phone app |
 | Optional | A [Backblaze B2](https://www.backblaze.com/cloud-storage) bucket and an application key for it | Off-site backup |
 | Optional | A free ntfy.sh account and access token | Emailing high and urgent alerts |
+| Optional | A domain you own and a free [deSEC](https://desec.io) account | Addresses like `photos.home.example.com` ([RUNBOOK](docs/RUNBOOK.md#your-own-web-addresses-optional)) |
 | Optional | A Google Cloud OAuth client | Importing Google Drive into OpenCloud ([RUNBOOK step 8](docs/RUNBOOK.md#8-import-google-drive-into-opencloud)) |
 
 **A computer to work from**, to write the USB installer, SSH into the server and keep your copy of this repo.
@@ -202,6 +203,7 @@ config/
   nut/                     UPS monitoring and low-battery shutdown
   systemd/                 timers: backup, verify, capacity, scrub, health, maintenance
   pi/                      the author's pi coding agent settings (optional)
+  traefik/dynamic.yml      which own-domain address goes to which app (optional, see APPS_DOMAIN)
   smartd.conf  sanoid.conf  52obento-unattended  docker-daemon.json  sshd-hardening.conf
 docs/
   RUNBOOK.md               step by step: install → apps → burn-in → pool → migrate → imports → backup → ops

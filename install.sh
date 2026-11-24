@@ -237,7 +237,20 @@ fi
 
 log "HTTPS for the apps inside your tailnet (Tailscale serve)"
 # https port : local app port. Vaultwarden needs HTTPS; the others are nicer with it.
-SERVE_PORTS=(443:2283 8443:8222 8920:8096 9200:9201)   # Immich, Vaultwarden, Jellyfin, OpenCloud
+SERVE_PORTS=(8443:8222 8920:8096 9200:9201)   # Vaultwarden, Jellyfin, OpenCloud
+IMMICH_URL_SHOWN=""
+if [[ -n "${APPS_DOMAIN:-}" ]]; then
+  # Traefik answers photos.<APPS_DOMAIN> on port 443, so Tailscale has to let go of it.
+  [[ -n "${DESEC_TOKEN:-}" ]] || warn "APPS_DOMAIN is set but DESEC_TOKEN isn't: Traefik can't get its certificate."
+  [[ ",${COMPOSE_PROFILES:-}," == *,domain,* ]] || warn "APPS_DOMAIN is set: add COMPOSE_PROFILES=domain to .env so Traefik starts."
+  install -d -m 700 "$SSD_DATA/traefik"
+  if tailscale serve status 2>/dev/null | grep -q '^https://[^:]*ts\.net (tailnet only)'; then
+    timeout 60 tailscale serve --https=443 off >/dev/null || warn "Couldn't free port 443 from Tailscale serve."
+  fi
+  IMMICH_URL_SHOWN="https://photos.$APPS_DOMAIN"
+else
+  SERVE_PORTS=(443:2283 "${SERVE_PORTS[@]}")
+fi
 TS_DOMAIN="$(tailscale status --json 2>/dev/null | jq -r '.CertDomains[0] // empty' || true)"
 if ! tailscale status >/dev/null 2>&1; then
   warn "HTTPS not set up: run 'sudo tailscale up --ssh', then re-run install.sh."
@@ -248,7 +261,7 @@ else
     timeout 60 tailscale serve --bg --yes --https="${m%%:*}" "http://localhost:${m##*:}" >/dev/null \
       || warn "Couldn't set up https://$TS_DOMAIN:${m%%:*} (tailscale serve failed)."
   done
-  log "Immich https://$TS_DOMAIN  Vaultwarden https://$TS_DOMAIN:8443  Jellyfin https://$TS_DOMAIN:8920"
+  log "Immich ${IMMICH_URL_SHOWN:-https://$TS_DOMAIN}  Vaultwarden https://$TS_DOMAIN:8443  Jellyfin https://$TS_DOMAIN:8920"
   log "OpenCloud https://$TS_DOMAIN:9200"
   # OpenCloud needs its public address, and must resolve it itself to check sign-ins (see compose).
   TS_IP="$(tailscale ip -4 | head -1)"

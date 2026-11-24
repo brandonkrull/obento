@@ -71,7 +71,7 @@ ssh tamago
 | Files (Google Drive replacement) | **OpenCloud**: `brew install --cask opencloud` | `https://tamago.<tailnet>.ts.net:9200` |
 | Passwords | **Bitwarden**: `brew install --cask bitwarden`, plus the Bitwarden browser extension | `https://tamago.<tailnet>.ts.net:8443` |
 | Media | **Jellyfin Media Player**: `brew install --cask jellyfin-media-player` | `https://tamago.<tailnet>.ts.net:8920` |
-| Photos | Immich has no Mac app: use the browser (phones use the Immich app) | `https://tamago.<tailnet>.ts.net` |
+| Photos | Immich has no Mac app: use the browser (phones use the Immich app) | `https://photos.<your domain>` if the server has its own addresses, otherwise `https://tamago.<tailnet>.ts.net` |
 | Alerts | ntfy in the browser (allow notifications), or the phone app | `<NTFY_URL>/<NTFY_TOPIC>` from `.env`, e.g. `https://ntfy.sh/your-topic` |
 | Ad blocking admin | browser | `http://tamago:3000` |
 | Drive health | browser | `http://tamago:8080` |
@@ -99,7 +99,7 @@ Open **Jellyfin Media Player**, enter the server address when it asks for one, a
 ### Google Photos import
 
 `immich-go` uploads a Google Takeout export into Immich. RUNBOOK step 7 runs it on the server; to run it from
-the Mac instead, use the same command with `--server=https://tamago.<tailnet>.ts.net` (it needs an Immich
+the Mac instead, use the same command with `--server=` set to Immich's address above (it needs an Immich
 API key from **Account Settings → API Keys**).
 
 ## When something doesn't load

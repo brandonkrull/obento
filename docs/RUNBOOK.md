@@ -168,7 +168,7 @@ Where to find them (on any device signed into Tailscale; at home you can also us
 
 | App | Address |
 |---|---|
-| Immich | https://tamago.<tailnet>.ts.net |
+| Immich | https://tamago.<tailnet>.ts.net, or https://photos.<APPS_DOMAIN> with [your own web addresses](#your-own-web-addresses-optional) |
 | Vaultwarden | https://tamago.<tailnet>.ts.net:8443 (HTTPS only) |
 | OpenCloud | https://tamago.<tailnet>.ts.net:9200 (HTTPS only) |
 | Jellyfin | https://tamago.<tailnet>.ts.net:8920 or http://tamago:8096 |
@@ -238,6 +238,51 @@ Forgot the admin password: from a Mac (it asks for the new password, then the se
 ```bash
 HASH=$(htpasswd -nB -C 10 <user> | cut -d: -f2-) && ssh -t tamago "sudo sed -i '/^users:/,/^[a-z]/ s|^\(    password: \).*|\1$HASH|' /srv/adguard/conf/AdGuardHome.yaml && obento restart adguard"
 ```
+
+### Your own web addresses (optional)
+
+With a domain you own, apps get addresses like `photos.home.example.com` instead of
+`tamago.<tailnet>.ts.net` ports. So far this covers Immich (`photos.`); the other apps keep their port
+addresses for now. Nothing becomes reachable from the internet: the names point at the server's Tailscale
+address, so they only work on devices signed into your tailnet.
+
+How it works: Traefik (the `traefik` app) answers those names on port 443 with one Let's Encrypt certificate
+for `*.home.example.com`. To get it, the server proves it owns the domain through **deSEC**, a free DNS host
+with an API. Your domain's own DNS stays where it is (Squarespace, for example): you only add two records.
+Below, `home.example.com` stands for whatever you choose; it becomes `APPS_DOMAIN`.
+
+1. **deSEC**: sign up at desec.io → **Domains → +** → create a free dynDNS name, e.g.
+   `obento-<yourname>.dedyn.io` → **Token Management → +** → copy the token (shown once).
+2. **Your domain's DNS** (Squarespace: **Domains** → your domain → **DNS** → **Custom records**). The Host is
+   the part before your domain:
+
+   | Host | Type | Data |
+   |---|---|---|
+   | `*.home` | A | the server's Tailscale IP (`tailscale ip -4` on the server) |
+   | `_acme-challenge.home` | CNAME | `_acme-challenge.obento-<yourname>.dedyn.io` |
+
+   If wildcards aren't accepted, add `photos.home` as the A record instead (and one per app as more move).
+   Check from the Mac after a few minutes: `dig +short photos.home.example.com` prints the Tailscale IP.
+3. **Settings** in `~/obento/.env` on the server, then install and start:
+
+   ```bash
+   APPS_DOMAIN=home.example.com
+   DESEC_TOKEN=<the deSEC token>
+   COMPOSE_PROFILES=domain
+   ```
+
+   ```bash
+   cd ~/obento && sudo ./install.sh && obento up
+   ```
+
+   From here Immich's old address (`https://tamago.<tailnet>.ts.net`) stops working: Traefik now has port 443.
+4. **Check**: open `https://photos.home.example.com`. The certificate takes a minute or two the first time;
+   if it doesn't load, `obento logs traefik | grep -i -E "acme|error"` says why.
+5. **Move Immich over**: in Immich, **Administration → Settings → Server → External Domain** →
+   `https://photos.home.example.com` (used in shared links). On every phone, log out of the Immich app and log
+   back in with the new address.
+
+The certificate renews itself. If the server's Tailscale IP ever changes, update the A record.
 
 ## 4. Drives arrive → burn-in (~3 days)
 

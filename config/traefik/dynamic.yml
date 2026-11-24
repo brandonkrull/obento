@@ -1,0 +1,13 @@
+# Which address goes to which app. Traefik (compose service "traefik") reads this; the wildcard certificate
+# for *.APPS_DOMAIN is set in docker-compose.yml. Names match on the first label, so photos.<APPS_DOMAIN>
+# works for any domain. Apps are reached on the host's localhost ports (Traefik uses host networking).
+http:
+  routers:
+    photos:
+      rule: 'HostRegexp(`^photos\.`)'
+      service: immich
+  services:
+    immich:
+      loadBalancer:
+        servers:
+          - url: http://127.0.0.1:2283
