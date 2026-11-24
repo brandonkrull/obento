@@ -1,5 +1,5 @@
-# Family server stack. Reads ../.env via the symlink compose/.env -> /etc/homeserver/.env
-#   cd compose && docker compose up -d
+# Family server stack. Installed to /opt/homeserver/compose, where .env links to /etc/homeserver/.env.
+# Manage it with 'tamago' (see 'tamago help'), not by running docker compose from the repo.
 # Remote access is via Tailscale (no ports exposed to the internet). See docs/RUNBOOK.md.
 name: homeserver
 

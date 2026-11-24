@@ -109,7 +109,7 @@ Things written for the author's setup, where to change them, and whether you nee
 
 | What | Where | What to do |
 |---|---|---|
-| Hostname `tamago` | Chosen in the Ubuntu installer | Pick your own. Read `tamago` in the docs' addresses as your hostname; `install.sh` finds the real Tailscale name itself. `HOSTNAME_NAS` in `.env` isn't used by any script, so it doesn't rename anything. |
+| Hostname `tamago` | Chosen in the Ubuntu installer | Pick your own. Read `tamago` in the docs' addresses as your hostname; `install.sh` finds the real Tailscale name itself. |
 | The `tamago` command | `scripts/tamago`, linked to `/usr/local/bin/tamago` | Leave it: it's only the name of the app-management command. |
 | Username `brandon` | `docs/MAC-SETUP.md` (ssh config), RUNBOOK step 1 (`ssh-copy-id`) | Use your own account on the server. |
 | Repo address | RUNBOOK step 2 (deploy key, `git clone`) | Use your fork's address. |
@@ -117,7 +117,7 @@ Things written for the author's setup, where to change them, and whether you nee
 | UPS model (APC BE600M1) | `config/nut/ups.conf` | `usbhid-ups` with `port = auto` covers many USB UPSes; change `desc`, or the driver if yours needs another. No UPS: leave it; `install.sh` warns that NUT will start once a UPS is connected, and nothing else depends on it. |
 | UPS monitor password | `config/nut/upsd.users` and `config/nut/upsmon.conf` (`change-me-local-only`) | Change both to the same value. It's only used on the server itself. |
 | LAN ranges | `install.sh`, firewall: `ufw allow from 192.168.0.0/16` and `10.0.0.0/8` | Fine for most home routers. If your network uses `172.16.x.x`, add a line for it. |
-| Time zone | `TZ=America/Los_Angeles` in `.env` | Set yours. It's the apps' time zone; timer times follow the server's clock. |
+| Time zone | `TZ=America/Los_Angeles` in `.env` | Set yours. `install.sh` sets the server's clock to it too, so the timers run at local times. |
 | pi coding agent | `config/pi/` (points at the author's own model server, `spark-e2ca:11437`); the "pi coding agent" block in `install.sh` | A personal extra. `install.sh` always installs Node.js 22 (from NodeSource) and pi, and copies `config/pi/` to `~/.pi/agent/`. Point `config/pi/models.json` at your own OpenAI-compatible server, or remove that block from `install.sh` in your fork. Unused, it does no harm. |
 | GPU and drives passed to containers | `compose/docker-compose.yml`: `/dev/dri` (Immich, Jellyfin), the `-openvino` image, `/dev/nvme0` (Scrutiny) | Without an Intel iGPU or an NVMe drive, remove or change those lines, or the containers won't start. |
 | Pool name, paths, alert threshold | `POOL_NAME`, `SSD_DATA`, `POOL_WARN_PCT` in `.env` | Safe to leave as they are. |

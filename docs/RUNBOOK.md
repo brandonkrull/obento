@@ -258,22 +258,25 @@ sudo /opt/homeserver/scripts/create-pool.sh /dev/disk/by-id/ata-..._AAAA /dev/di
 /opt/homeserver/scripts/print-scrutiny-devices.sh   # paste into ~/homeserver/compose scrutiny devices:, sudo ./install.sh, tamago up scrutiny
 ```
 
-## 6. Move Immich, Vaultwarden and OpenCloud onto the pool
+## 6. Move Immich, Vaultwarden, OpenCloud and media onto the pool
 
 ```bash
-tamago stop immich-server immich-machine-learning vaultwarden opencloud
+tamago stop immich-server immich-machine-learning vaultwarden opencloud jellyfin
 sudo rsync -aHAX --info=progress2 /srv/immich/library/ /tank/photos/
 sudo rsync -aHAX /srv/vaultwarden/ /tank/vaultwarden/
 sudo rsync -aHAX --info=progress2 /srv/opencloud/data/ /tank/opencloud/
+sudo rsync -aHAX --info=progress2 /srv/media/ /tank/media/
 # verify BEFORE switching (lesson: never trust a silent copy)
 sudo rsync -aHAXn --checksum --itemize-changes /srv/immich/library/ /tank/photos/ | head   # must print nothing
 sudo rsync -aHAXn --checksum --itemize-changes /srv/vaultwarden/ /tank/vaultwarden/ | head
 sudo rsync -aHAXn --checksum --itemize-changes /srv/opencloud/data/ /tank/opencloud/ | head
+sudo rsync -aHAXn --checksum --itemize-changes /srv/media/ /tank/media/ | head
 ```
 
 Edit `.env`: `IMMICH_UPLOAD_LOCATION=/tank/photos`, `VAULTWARDEN_DATA=/tank/vaultwarden`,
 `OPENCLOUD_DATA=/tank/opencloud`, `MEDIA_LOCATION=/tank/media` → `sudo ./install.sh` → `tamago up`.
-Check photos and files load, then delete the old copies on the SSD a week later.
+Check photos, files and media load, then delete the old copies on the SSD a week later.
+`install.sh` gives you the `Movies`, `Shows` and `Music` folders on `/tank/media` too, so copying in stays sudo-free.
 OpenCloud's config (`/srv/opencloud/config`, small, holds its keys) stays on the SSD and is backed up nightly.
 
 ## 7. Import Google Photos and verify
@@ -379,7 +382,7 @@ Keep Google Drive as it is until step 9 (off-site backup) has finished and been 
 
 | What | When | Alert |
 |---|---|---|
-| SMART short / long self-tests | daily / monthly | on any change |
+| SMART short / long self-tests | daily 2 am / 1st Saturday 3 am | on any change |
 | ZFS events (errors, degraded) | instantly | urgent |
 | Scrub | 1st Sunday monthly | result either way |
 | Capacity ≥ 80% / pool not ONLINE | hourly check | high / urgent |

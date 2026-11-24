@@ -31,6 +31,13 @@ restart_if_stale() {
   done
 }
 
+# The timers (backup 03:30, health report Monday 08:00, ...) follow the server's clock; TZ alone only reaches the apps.
+if [[ -n "${TZ:-}" && -f "/usr/share/zoneinfo/$TZ" ]]; then
+  timedatectl set-timezone "$TZ"
+else
+  warn "TZ '${TZ:-}' in .env isn't a known time zone; the server clock stays on $(timedatectl show -p Timezone --value)."
+fi
+
 log "Base packages"
 apt-get update
 DEBIAN_FRONTEND=noninteractive apt-get install -y \
@@ -112,7 +119,7 @@ if [[ -f $ZEDRC ]]; then
   systemctl restart zfs-zed
 fi
 
-log "UPS (APC BE600M1 over USB) -> clean shutdown on low battery"
+log "UPS over USB (config/nut) -> clean shutdown on low battery"
 for f in ups.conf nut.conf upsd.users upsmon.conf; do
   install_conf 640 nut "$REPO_DIR/config/nut/$f" "/etc/nut/$f"
 done
