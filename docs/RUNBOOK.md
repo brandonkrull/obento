@@ -136,7 +136,7 @@ Install the **ntfy** app on your phone and subscribe to your `NTFY_TOPIC`.
 
 Email too (optional): set `NTFY_EMAIL` in `.env` and re-run `sudo ./install.sh`. High and urgent alerts (drive,
 backup, pool, UPS problems) and Scrutiny's warnings are then also emailed; routine ones stay notification-only.
-Test it with `homeserver-notify high "Email test" "If this arrived by email, alerts will too."`
+Test it with `sudo homeserver-notify high "Email test" "If this arrived by email, alerts will too."`
 
 Later changes: edit and push from your Mac, then on the server `cd ~/homeserver && git pull && sudo ./install.sh`
 (the deploy key is read-only, so don't edit on the server).

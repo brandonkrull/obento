@@ -8,7 +8,11 @@ ENV_FILE="${ENV_FILE:-/etc/homeserver/.env}"
 
 load_env() {
   if [[ ! -f "$ENV_FILE" ]]; then
-    echo "Missing $ENV_FILE (copy .env.example to .env and fill it in)" >&2
+    if [[ $EUID -ne 0 ]]; then
+      echo "Run this with sudo: the settings are in /etc/homeserver/.env, which only root can read." >&2
+    else
+      echo "Missing $ENV_FILE (copy .env.example to .env, fill it in, and run sudo ./install.sh)" >&2
+    fi
     exit 1
   fi
   set -a
