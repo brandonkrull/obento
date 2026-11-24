@@ -1,3 +1,4 @@
 .env
 missing.txt
 __pycache__/
+.env.bak-*
