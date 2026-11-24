@@ -144,5 +144,21 @@ else
   done
 fi
 
+log "HTTPS for the apps inside your tailnet (Tailscale serve)"
+# https port : local app port. Vaultwarden needs HTTPS; the others are nicer with it.
+SERVE_PORTS=(443:2283 8443:8222 8920:8096)   # Immich, Vaultwarden, Jellyfin
+TS_DOMAIN="$(tailscale status --json 2>/dev/null | jq -r '.CertDomains[0] // empty' || true)"
+if ! tailscale status >/dev/null 2>&1; then
+  warn "HTTPS not set up: run 'sudo tailscale up --ssh', then re-run install.sh."
+elif [[ -z "$TS_DOMAIN" ]]; then
+  warn "HTTPS not set up: turn on HTTPS Certificates in the Tailscale admin console (DNS page), then re-run install.sh."
+else
+  for m in "${SERVE_PORTS[@]}"; do
+    timeout 60 tailscale serve --bg --yes --https="${m%%:*}" "http://localhost:${m##*:}" >/dev/null \
+      || warn "Couldn't set up https://$TS_DOMAIN:${m%%:*} (tailscale serve failed)."
+  done
+  log "Immich https://$TS_DOMAIN  Vaultwarden https://$TS_DOMAIN:8443  Jellyfin https://$TS_DOMAIN:8920"
+fi
+
 homeserver-notify default "Bootstrap complete" "install.sh finished on $(hostname)"
 log "Done. Next: 'tamago up' to start the apps (see docs/RUNBOOK.md)."

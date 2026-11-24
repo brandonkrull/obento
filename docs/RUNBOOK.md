@@ -128,6 +128,7 @@ cd ~/homeserver
 cp .env.example .env && chmod 600 .env && nano .env   # fill in every "change-me"
 sudo ./install.sh
 sudo tailscale up --ssh
+sudo ./install.sh                          # again, now that Tailscale is up: sets up HTTPS for the apps
 sudo systemctl status smartmontools        # you should get a "test" ntfy alert per drive
 ```
 
@@ -154,18 +155,24 @@ tamago up        # starts every app (asks for your password); 'tamago help' list
 tamago status
 ```
 
-HTTPS inside your tailnet (needed for Vaultwarden, nicer everywhere):
+Where to find them (on any device signed into Tailscale; at home you can also use the server's LAN IP):
 
-```bash
-sudo tailscale serve --bg --https=443  http://localhost:2283   # Immich   -> https://nas.<tailnet>.ts.net
-sudo tailscale serve --bg --https=8443 http://localhost:8222   # Vaultwarden
-sudo tailscale serve --bg --https=8920 http://localhost:8096   # Jellyfin
-```
+| App | Address |
+|---|---|
+| Immich | https://tamago.<tailnet>.ts.net |
+| Vaultwarden | https://tamago.<tailnet>.ts.net:8443 (HTTPS only) |
+| Jellyfin | https://tamago.<tailnet>.ts.net:8920 or http://tamago:8096 |
+| AdGuard Home | http://tamago:3000 (first-run setup) |
+| Scrutiny | http://tamago:8080 |
+
+`install.sh` sets up the HTTPS addresses with `tailscale serve` once Tailscale is connected (it prints them at
+the end). It needs **HTTPS Certificates** turned on in the Tailscale admin console (DNS page); if they're off,
+`install.sh` says so. They're only reachable inside your tailnet, never from the internet.
 
 - Immich: create the admin account, then **Account Settings → API Keys** → put it in `.env` as `IMMICH_API_KEY`
   and re-run `sudo ./install.sh` (copies .env). Administration → Settings → Machine Learning: OpenVINO is used automatically.
   Video transcoding → hardware acceleration: **Quick Sync**.
-- AdGuard: http://nas:3000 setup wizard. Later point your router's DNS at the NAS's LAN IP.
+- AdGuard: http://tamago:3000 setup wizard. Later point your router's DNS at the server's LAN IP.
 - Vaultwarden: signups are disabled by default. To create the family's accounts,
   temporarily set `SIGNUPS_ALLOWED: "true"` in `~/homeserver/compose/docker-compose.yml`, `sudo ./install.sh`,
   `tamago up vaultwarden`, create accounts for the family, then set it back the same way.
