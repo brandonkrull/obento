@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Weekly cleanup: remove image layers left behind by 'obento update' and old build cache, and say when
+# Weekly cleanup: remove image layers left behind by 'obento upgrade' and old build cache, and say when
 # automatic updates are waiting for a reboot. Never touches volumes, containers or images in use.
 source "$(dirname "$(readlink -f "$0")")/lib.sh"
 load_env

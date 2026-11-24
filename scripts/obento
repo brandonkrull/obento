@@ -18,7 +18,8 @@ Commands:
   restart [app...]      restart apps
   status                list apps and whether they're running
   logs [-f] [app...]    show recent logs; -f keeps following
-  update [app...]       download newer images, then restart what changed
+  update                get the latest setup: git pull in your repo, then sudo ./install.sh
+  upgrade [app...]      download newer app versions (images), then restart what changed
   signups on|off        let new Vaultwarden accounts be created (off again after 'off' or any 'obento up')
   apps                  list app names
   help                  show this help
@@ -37,6 +38,18 @@ compose() {
 }
 COMPOSE_ENV=()
 
+# git pull as the repo's owner (their GitHub key), then install.sh. exec, because install.sh replaces this file.
+update_setup() {
+  local repo owner
+  repo="$(cat /opt/obento/repo-path 2>/dev/null)" || true
+  [[ -d "$repo/.git" ]] || { echo "obento: repo not found; run 'sudo ./install.sh' in your obento folder once" >&2; exit 1; }
+  owner="$(stat -c %U "$repo")"
+  if [[ "$owner" == "$(id -un)" ]]; then git -C "$repo" pull --ff-only; else sudo -u "$owner" git -C "$repo" pull --ff-only; fi
+  local sudo=()
+  [[ $EUID -eq 0 ]] || sudo=(sudo)
+  cd "$repo" && exec "${sudo[@]}" ./install.sh
+}
+
 cmd="${1:-help}"
 (( $# )) && shift
 case "$cmd" in
@@ -47,7 +60,8 @@ case "$cmd" in
   status|ps)        compose ps --all ;;
   logs)             follow=(); [[ "${1:-}" == -f ]] && { follow=(--follow); shift; }
                     compose logs --tail 100 "${follow[@]}" "$@" ;;
-  update)           compose pull "$@" && compose up -d "$@" ;;
+  update)           update_setup ;;
+  upgrade)          compose pull "$@" && compose up -d "$@" ;;
   apps)             compose config --services ;;
   signups)          case "${1:-}" in
                       on)  COMPOSE_ENV=(VAULTWARDEN_SIGNUPS_ALLOWED=true); compose up -d vaultwarden

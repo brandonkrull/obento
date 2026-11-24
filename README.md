@@ -149,7 +149,7 @@ obento stop [app...]      # stop apps;  obento down stops and removes all of the
 obento restart [app...]
 obento status
 obento logs -f [app...]
-obento update [app...]    # download newer images, restart what changed
+obento upgrade [app...]   # download newer app versions, restart what changed
 obento signups on|off     # let new Vaultwarden accounts be created, briefly
 obento apps               # list app names;  obento help for everything
 ```
@@ -157,7 +157,7 @@ obento apps               # list app names;  obento help for everything
 **Making changes.** Edit your copy of the repo (on your computer, then push), and on the server:
 
 ```bash
-cd ~/obento && git pull && sudo ./install.sh
+obento update             # git pull in ~/obento, then sudo ./install.sh
 obento up                 # if you changed .env or the compose file
 ```
 

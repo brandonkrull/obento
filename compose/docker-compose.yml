@@ -107,7 +107,7 @@ services:
   # ---------------------------------------------------------------- Files (Google Drive replacement)
   opencloud:
     container_name: opencloud
-    image: opencloudeu/opencloud:4      # production (stable) line; 'obento update' pulls 4.x fixes
+    image: opencloudeu/opencloud:4      # production (stable) line; 'obento upgrade' pulls 4.x fixes
     user: "1000:1000"                   # owns ${SSD_DATA}/opencloud and OPENCLOUD_DATA (install.sh)
     entrypoint: ["/bin/sh", "-c"]
     # init writes the config with random secrets on first start and fails harmlessly afterwards

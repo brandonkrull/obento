@@ -108,6 +108,8 @@ cp -a "$REPO_DIR/scripts" "$REPO_DIR/config" "$REPO_DIR/compose" "$REPO_DIR/docs
 # Root runs these from systemd, so only root may change them (cp -a keeps the repo owner).
 chown -R root:root /opt/obento
 chmod 755 /opt/obento/scripts/*
+# 'obento update' pulls and re-installs from here.
+printf '%s\n' "$REPO_DIR" > /opt/obento/repo-path
 ln -sf /opt/obento/scripts/notify /usr/local/bin/obento-notify
 ln -sf /opt/obento/scripts/obento /usr/local/bin/obento
 

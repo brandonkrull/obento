@@ -140,7 +140,7 @@ verify your email address there, and create an access token (**Account → Acces
 backup, pool, UPS problems) and Scrutiny's warnings are then also emailed; routine ones stay notification-only.
 Test it with `sudo obento-notify high "Email test" "If this arrived by email, alerts will too."`
 
-Later changes: edit and push from your Mac, then on the server `cd ~/obento && git pull && sudo ./install.sh`
+Later changes: edit and push from your Mac, then on the server `obento update` (it runs `git pull` and `sudo ./install.sh`)
 (the deploy key is read-only, so don't edit on the server).
 
 `install.sh` also installs **pi** (the coding agent) for your account, set up to use `qwen36-moe` on
