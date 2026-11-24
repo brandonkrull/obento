@@ -16,6 +16,8 @@ DEBIAN_FRONTEND=noninteractive apt-get install -y \
   zfsutils-linux smartmontools sanoid restic nut-client nut-server \
   curl jq unattended-upgrades ufw lm-sensors e2fsprogs python3 ca-certificates \
   libnss-resolve
+# Installing libnss-resolve restarts systemd-resolved; wait for DNS before downloading anything else.
+for _ in {1..30}; do getent hosts download.docker.com >/dev/null && break; sleep 1; done
 
 log "Docker (official repo)"
 if ! command -v docker >/dev/null; then
@@ -100,6 +102,7 @@ ln -sf /run/systemd/resolve/resolv.conf /etc/resolv.conf
 # libnss-resolve keeps name lookups going through systemd-resolved without the stub, so Tailscale
 # names (e.g. spark-e2ca) still resolve.
 systemctl restart systemd-resolved
+for _ in {1..30}; do getent hosts deb.nodesource.com >/dev/null && break; sleep 1; done
 
 log "Directories on the SSD"
 install -d -m 755 "$SSD_DATA"/{immich,vaultwarden,adguard,jellyfin,scrutiny,media}
