@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Usage: homeserver-notify <low|default|high|urgent> <title> <message>
+# Usage: obento-notify <low|default|high|urgent> <title> <message>
 # Also works as a smartd -M exec target (smartd sets SMARTD_* env vars).
 source "$(dirname "$(readlink -f "$0")")/lib.sh"
 load_env
@@ -7,4 +7,4 @@ if [[ -n "${SMARTD_DEVICE:-}" ]]; then
   notify urgent "SMART: ${SMARTD_FAILTYPE:-problem} on ${SMARTD_DEVICE}" "${SMARTD_MESSAGE:-see journalctl -u smartmontools}"
   exit 0
 fi
-notify "${1:-default}" "${2:-homeserver}" "${3:-}"
+notify "${1:-default}" "${2:-obento}" "${3:-}"

@@ -25,7 +25,7 @@ zpool status 2>/dev/null | grep -q "$(basename "$DEV")" && die "Refusing: $DEV i
 
 SERIAL="$(smartctl -i "$DEV" | awk -F': *' '/Serial Number/{print $2}')"
 MODEL="$(smartctl -i "$DEV" | awk -F': *' '/Device Model|Product/{print $2; exit}')"
-LOGDIR=/var/log/homeserver; install -d "$LOGDIR"
+LOGDIR=/var/log/obento; install -d "$LOGDIR"
 LOG="$LOGDIR/burnin-$SERIAL.log"
 exec > >(tee -a "$LOG") 2>&1
 

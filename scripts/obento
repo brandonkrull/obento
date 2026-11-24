@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Usage: tamago <command> [app...]   Manage the apps in /opt/homeserver/compose. See 'tamago help'.
+# Usage: obento <command> [app...]   Manage the apps in /opt/obento/compose. See 'obento help'.
 set -euo pipefail
 
-COMPOSE_DIR=/opt/homeserver/compose
+COMPOSE_DIR=/opt/obento/compose
 
 usage() {
   cat <<'EOF'
-Usage: tamago <command> [app...]
+Usage: obento <command> [app...]
 
 Start, stop and check the home server's apps (Immich, Vaultwarden, OpenCloud, AdGuard, Jellyfin, Scrutiny).
 Apps are the service names in docker-compose.yml; leave them out to act on all of them.
@@ -19,17 +19,17 @@ Commands:
   status                list apps and whether they're running
   logs [-f] [app...]    show recent logs; -f keeps following
   update [app...]       download newer images, then restart what changed
-  signups on|off        let new Vaultwarden accounts be created (off again after 'off' or any 'tamago up')
+  signups on|off        let new Vaultwarden accounts be created (off again after 'off' or any 'obento up')
   apps                  list app names
   help                  show this help
 
-Runs docker compose with sudo from /opt/homeserver/compose, so it uses the live settings in
-/etc/homeserver/.env. After changing ~/homeserver, run 'sudo ./install.sh' there first.
+Runs docker compose with sudo from /opt/obento/compose, so it uses the live settings in
+/etc/obento/.env. After changing ~/obento, run 'sudo ./install.sh' there first.
 EOF
 }
 
 compose() {
-  [[ -f "$COMPOSE_DIR/docker-compose.yml" ]] || { echo "tamago: $COMPOSE_DIR not installed; run 'sudo ./install.sh' in ~/homeserver" >&2; exit 1; }
+  [[ -f "$COMPOSE_DIR/docker-compose.yml" ]] || { echo "obento: $COMPOSE_DIR not installed; run 'sudo ./install.sh' in ~/obento" >&2; exit 1; }
   local sudo=()
   [[ $EUID -eq 0 ]] || sudo=(sudo)
   # env passes settings through sudo; compose prefers them over .env.
@@ -41,7 +41,7 @@ cmd="${1:-help}"
 (( $# )) && shift
 case "$cmd" in
   up)               compose up -d "$@" ;;
-  down)             (( $# == 0 )) || { echo "tamago: 'down' acts on all apps; use 'stop <app>' for one" >&2; exit 2; }
+  down)             (( $# == 0 )) || { echo "obento: 'down' acts on all apps; use 'stop <app>' for one" >&2; exit 2; }
                     compose down ;;
   stop|restart)     compose "$cmd" "$@" ;;
   status|ps)        compose ps --all ;;
@@ -51,10 +51,10 @@ case "$cmd" in
   apps)             compose config --services ;;
   signups)          case "${1:-}" in
                       on)  COMPOSE_ENV=(VAULTWARDEN_SIGNUPS_ALLOWED=true); compose up -d vaultwarden
-                           echo "Vaultwarden sign-ups are ON. Create the accounts, then run: tamago signups off" ;;
+                           echo "Vaultwarden sign-ups are ON. Create the accounts, then run: obento signups off" ;;
                       off) compose up -d vaultwarden; echo "Vaultwarden sign-ups are off." ;;
-                      *)   echo "tamago: use 'tamago signups on' or 'tamago signups off'" >&2; exit 2 ;;
+                      *)   echo "obento: use 'obento signups on' or 'obento signups off'" >&2; exit 2 ;;
                     esac ;;
   help|-h|--help)   usage ;;
-  *)                echo "tamago: unknown command '$cmd'" >&2; usage >&2; exit 2 ;;
+  *)                echo "obento: unknown command '$cmd'" >&2; usage >&2; exit 2 ;;
 esac

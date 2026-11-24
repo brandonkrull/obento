@@ -17,7 +17,7 @@ zpool list "$POOL_NAME" >/dev/null 2>&1 && die "Pool $POOL_NAME already exists."
 
 for d in "$A" "$B"; do
   s="$(smartctl -i "$d" | awk -F': *' '/Serial Number/{print $2}')"
-  [[ -f "/var/log/homeserver/burnin-$s.PASS" ]] || die "No burn-in PASS for $d ($s). Run scripts/burnin.sh first."
+  [[ -f "/var/log/obento/burnin-$s.PASS" ]] || die "No burn-in PASS for $d ($s). Run scripts/burnin.sh first."
   smartctl -H "$d" | grep -q PASSED || die "SMART health not PASSED for $d"
 done
 

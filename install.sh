@@ -6,8 +6,8 @@ source "$(dirname "$0")/scripts/lib.sh"
 require_root
 
 [[ -f "$REPO_DIR/.env" ]] || die "Copy .env.example to .env and fill it in first."
-install -d -m 700 /etc/homeserver
-install -m 600 "$REPO_DIR/.env" /etc/homeserver/.env
+install -d -m 700 /etc/obento
+install -m 600 "$REPO_DIR/.env" /etc/obento/.env
 load_env
 
 # install_conf <mode> <group> <src> <dest>: copy only when the content differs, so the file's
@@ -75,12 +75,12 @@ fi
 tailscale status >/dev/null 2>&1 || warn "Run 'sudo tailscale up --ssh' to join your tailnet."
 
 log "SSH hardening (keys only)"
-install -m 644 "$REPO_DIR/config/sshd-hardening.conf" /etc/ssh/sshd_config.d/10-homeserver.conf
+install -m 644 "$REPO_DIR/config/sshd-hardening.conf" /etc/ssh/sshd_config.d/10-obento.conf
 if ls /home/*/.ssh/authorized_keys >/dev/null 2>&1; then
   systemctl reload ssh
 else
   warn "No authorized_keys found; password SSH left enabled until you add a key, then re-run."
-  rm -f /etc/ssh/sshd_config.d/10-homeserver.conf
+  rm -f /etc/ssh/sshd_config.d/10-obento.conf
 fi
 
 log "Firewall (LAN + tailnet only)"
@@ -92,7 +92,7 @@ ufw allow from 10.0.0.0/8
 ufw --force enable
 
 log "Updates automatic (Ubuntu, Docker, Tailscale, Node.js); kernel updates held (lesson: kernel regressions)"
-install -m 644 "$REPO_DIR/config/52homeserver-unattended" /etc/apt/apt.conf.d/52homeserver-unattended
+install -m 644 "$REPO_DIR/config/52obento-unattended" /etc/apt/apt.conf.d/52obento-unattended
 apt-mark hold linux-image-generic linux-headers-generic linux-generic \
   linux-image-generic-hwe-24.04 linux-headers-generic-hwe-24.04 linux-generic-hwe-24.04 >/dev/null 2>&1 || true
 
@@ -102,14 +102,14 @@ install_conf 644 root "$REPO_DIR/config/docker-daemon.json" /etc/docker/daemon.j
 # Restarts the apps once, the first time; after that live-restore keeps them running.
 restart_if_stale docker /etc/docker/daemon.json
 
-log "Install repo to /opt/homeserver (systemd units run scripts from here)"
-install -d /opt/homeserver
-cp -a "$REPO_DIR/scripts" "$REPO_DIR/config" "$REPO_DIR/compose" "$REPO_DIR/docs" /opt/homeserver/
+log "Install repo to /opt/obento (systemd units run scripts from here)"
+install -d /opt/obento
+cp -a "$REPO_DIR/scripts" "$REPO_DIR/config" "$REPO_DIR/compose" "$REPO_DIR/docs" /opt/obento/
 # Root runs these from systemd, so only root may change them (cp -a keeps the repo owner).
-chown -R root:root /opt/homeserver
-chmod 755 /opt/homeserver/scripts/*
-ln -sf /opt/homeserver/scripts/notify /usr/local/bin/homeserver-notify
-ln -sf /opt/homeserver/scripts/tamago /usr/local/bin/tamago
+chown -R root:root /opt/obento
+chmod 755 /opt/obento/scripts/*
+ln -sf /opt/obento/scripts/notify /usr/local/bin/obento-notify
+ln -sf /opt/obento/scripts/obento /usr/local/bin/obento
 
 log "Drive health monitoring (smartd)"
 install_conf 644 root "$REPO_DIR/config/smartd.conf" /etc/smartd.conf
@@ -144,11 +144,11 @@ fi
 log "Timers: backup, capacity check, scrub, drive health report, weekly cleanup"
 for u in "$REPO_DIR"/config/systemd/*; do install -m 644 "$u" /etc/systemd/system/; done
 systemctl daemon-reload
-systemctl enable --now homeserver-capacity.timer homeserver-scrub.timer homeserver-health.timer \
-  homeserver-maintenance.timer
+systemctl enable --now obento-capacity.timer obento-scrub.timer obento-health.timer \
+  obento-maintenance.timer
 # Backup timer is enabled by scripts/backup.sh --init once B2 is configured.
 # Ubuntu's built-in monthly scrub cron is replaced by our timer (which also alerts):
-[[ -f /etc/cron.d/zfsutils-linux ]] && sed -i 's/^\([^#].*zfs.*scrub.*\)$/# \1  # replaced by homeserver-scrub.timer/' /etc/cron.d/zfsutils-linux
+[[ -f /etc/cron.d/zfsutils-linux ]] && sed -i 's/^\([^#].*zfs.*scrub.*\)$/# \1  # replaced by obento-scrub.timer/' /etc/cron.d/zfsutils-linux
 
 log "Free port 53 for AdGuard (disable systemd-resolved stub listener)"
 install -d /etc/systemd/resolved.conf.d
@@ -161,7 +161,7 @@ for _ in {1..30}; do getent hosts deb.nodesource.com >/dev/null && break; sleep 
 
 log "Directories on the SSD"
 install -d -m 755 "$SSD_DATA"/{immich,vaultwarden,adguard,jellyfin,scrutiny,media}
-ln -sf /etc/homeserver/.env /opt/homeserver/compose/.env
+ln -sf /etc/obento/.env /opt/obento/compose/.env
 install -d -m 755 "$IMMICH_UPLOAD_LOCATION" "$IMMICH_DB_LOCATION"
 # Media folders belong to whoever runs install.sh, so files can be copied in without sudo (Jellyfin only reads).
 MEDIA_DIR="${MEDIA_LOCATION:-$SSD_DATA/media}"
@@ -176,7 +176,7 @@ esac
 
 log "Scrutiny alerts (-> ntfy)"
 SCRUTINY_CONF="$SSD_DATA/scrutiny/config/scrutiny.yaml"
-SCRUTINY_MARK="# Written by homeserver install.sh from NTFY_* in .env; edits are overwritten."
+SCRUTINY_MARK="# Written by obento install.sh from NTFY_* in .env; edits are overwritten."
 install -d -m 755 "$SSD_DATA/scrutiny/config"
 if [[ -f "$SCRUTINY_CONF" ]] && ! head -1 "$SCRUTINY_CONF" | grep -qxF "$SCRUTINY_MARK"; then
   warn "Kept your own $SCRUTINY_CONF; add an ntfy URL under notify.urls yourself."
@@ -253,7 +253,7 @@ else
   # App tokens let tools such as rclone sign in without the browser (Google Drive import, RUNBOOK step 8).
   APP_TOKEN_ENV=""
   [[ "${OPENCLOUD_APP_TOKENS:-}" == true ]] && APP_TOKEN_ENV=$'\n      OC_ADD_RUN_SERVICES: auth-app\n      PROXY_ENABLE_APP_AUTH: "true"'
-  cat > /opt/homeserver/compose/docker-compose.override.yml <<EOF
+  cat > /opt/obento/compose/docker-compose.override.yml <<EOF
 # Written by install.sh from this machine's Tailscale name and IP; don't edit.
 services:
   opencloud:
@@ -262,8 +262,8 @@ services:
     extra_hosts:
       - "$TS_DOMAIN:$TS_IP"
 EOF
-  rm -f /etc/homeserver/opencloud.env
+  rm -f /etc/obento/opencloud.env
 fi
 
-homeserver-notify default "Bootstrap complete" "install.sh finished on $(hostname)"
-log "Done. Next: 'tamago up' to start the apps (see docs/RUNBOOK.md)."
+obento-notify default "Bootstrap complete" "install.sh finished on $(hostname)"
+log "Done. Next: 'obento up' to start the apps (see docs/RUNBOOK.md)."

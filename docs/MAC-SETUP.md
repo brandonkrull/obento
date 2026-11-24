@@ -89,8 +89,8 @@ Accounts are created by the admin in OpenCloud (**Admin settings → Users**), n
 2. Server URL: `https://tamago.<tailnet>.ts.net:8443`, then log in with your Vaultwarden account.
 3. Do the same in the browser extension.
 
-New accounts need sign-ups switched on for a moment: `tamago signups on` on the server, create the account,
-then `tamago signups off`.
+New accounts need sign-ups switched on for a moment: `obento signups on` on the server, create the account,
+then `obento signups off`.
 
 ### Jellyfin
 
@@ -107,5 +107,5 @@ API key from **Account Settings → API Keys**).
 - Check Tailscale is connected (menu bar icon) and `ping tamago` works.
 - No websites load at all with Tailscale on, but they do with it off: the server (and its ad blocker) is down
   and away-from-home blocking is on. Quit Tailscale until it's back.
-- On the server: `tamago status` shows which apps are running, `tamago logs <app>` shows why one isn't.
+- On the server: `obento status` shows which apps are running, `obento logs <app>` shows why one isn't.
 - HTTPS addresses are set up by `sudo ./install.sh` on the server; it prints them at the end.

@@ -72,8 +72,8 @@ Wi-Fi or mobile data.
 3. Let it fill passwords: Settings → General → **AutoFill** (or **Passwords → Password Options** on older iOS)
    → turn on **Bitwarden**.
 
-New accounts need sign-ups switched on for a moment: `tamago signups on` on the server, create the account
-(easiest from a computer), then `tamago signups off`.
+New accounts need sign-ups switched on for a moment: `obento signups on` on the server, create the account
+(easiest from a computer), then `obento signups off`.
 
 Your vault is stored on the phone too, so saved passwords still fill in when Tailscale is off; new changes sync
 the next time it's connected.
@@ -96,4 +96,4 @@ Either works; try the other if a video won't play.
 - No websites load at all with Tailscale on, but they do with it off: the server (and its ad blocker) is down
   and away-from-home blocking is on. Leave Tailscale off until it's back.
 - Try the address in Safari: if Safari can't reach it either, the problem is Tailscale or the server, not the app.
-- On the server: `tamago status` shows which apps are running, `tamago logs <app>` shows why one isn't.
+- On the server: `obento status` shows which apps are running, `obento logs <app>` shows why one isn't.

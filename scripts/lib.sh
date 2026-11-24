@@ -3,13 +3,13 @@
 set -euo pipefail
 
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-ENV_FILE="${ENV_FILE:-/etc/homeserver/.env}"
+ENV_FILE="${ENV_FILE:-/etc/obento/.env}"
 [[ -f "$ENV_FILE" ]] || ENV_FILE="$REPO_DIR/.env"
 
 load_env() {
   if [[ ! -f "$ENV_FILE" ]]; then
     if [[ $EUID -ne 0 ]]; then
-      echo "Run this with sudo: the settings are in /etc/homeserver/.env, which only root can read." >&2
+      echo "Run this with sudo: the settings are in /etc/obento/.env, which only root can read." >&2
     else
       echo "Missing $ENV_FILE (copy .env.example to .env, fill it in, and run sudo ./install.sh)" >&2
     fi
@@ -24,7 +24,7 @@ load_env() {
 # notify <priority: low|default|high|urgent> <title> <message>
 notify() {
   local prio="$1" title="$2" msg="$3"
-  logger -t homeserver "[$prio] $title: $msg" || true
+  logger -t obento "[$prio] $title: $msg" || true
   [[ -n "${NTFY_TOPIC:-}" ]] || return 0
   local auth=() email=()
   [[ -n "${NTFY_TOKEN:-}" ]] && auth=(-H "Authorization: Bearer $NTFY_TOKEN")
@@ -35,7 +35,7 @@ notify() {
   resp="$(curl -sS -m 15 -w '\n%{http_code}' "${auth[@]}" "${email[@]}" \
     -H "Title: [$(hostname)] $title" -H "Priority: $prio" \
     -d "$msg" "${NTFY_URL%/}/$NTFY_TOPIC" 2>&1)" || true
-  [[ "${resp##*$'\n'}" == 2* ]] || logger -t homeserver "ntfy send failed: ${resp//$'\n'/ }" || true
+  [[ "${resp##*$'\n'}" == 2* ]] || logger -t obento "ntfy send failed: ${resp//$'\n'/ }" || true
 }
 
 require_root() {

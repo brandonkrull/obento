@@ -5,6 +5,6 @@ Wants=network-online.target
 
 [Service]
 Type=oneshot
-ExecStart=/opt/homeserver/scripts/health-report.sh
+ExecStart=/opt/obento/scripts/health-report.sh
 Nice=10
 IOSchedulingClass=idle

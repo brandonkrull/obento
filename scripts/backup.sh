@@ -16,12 +16,12 @@ DUMP_DIR="${SSD_DATA}/immich/db-dumps"
 if zfs list "$POOL_NAME/backups" >/dev/null 2>&1; then DUMP_DIR="/$POOL_NAME/backups/immich-db"; fi
 install -d -m 700 "$DUMP_DIR"
 
-trap 'notify urgent "Backup FAILED" "restic backup failed at line $LINENO — journalctl -u homeserver-backup"' ERR
+trap 'notify urgent "Backup FAILED" "restic backup failed at line $LINENO — journalctl -u obento-backup"' ERR
 
 case "${1:-}" in
   --init)
     restic snapshots >/dev/null 2>&1 || restic init
-    systemctl enable --now homeserver-backup.timer homeserver-verify.timer
+    systemctl enable --now obento-backup.timer obento-verify.timer
     log "Repository ready and nightly timer enabled."
     warn "Store RESTIC_PASSWORD in Vaultwarden AND on paper. Without it the backup is unreadable."
     exit 0 ;;
@@ -37,7 +37,7 @@ docker exec immich_postgres pg_dumpall --clean --if-exists --username=postgres \
 find "$DUMP_DIR" -name 'immich-*.sql.gz' -mtime +14 -delete
 
 PATHS=("$IMMICH_UPLOAD_LOCATION/library" "$IMMICH_UPLOAD_LOCATION/upload" "$IMMICH_UPLOAD_LOCATION/profile"
-       "$DUMP_DIR" /etc/homeserver /opt/homeserver)
+       "$DUMP_DIR" /etc/obento /opt/obento)
 for p in "$SSD_DATA/vaultwarden" "/$POOL_NAME/vaultwarden" "$SSD_DATA/opencloud/config" "${OPENCLOUD_DATA:-}"; do
   [[ -n "$p" && -d "$p" ]] && PATHS+=("$p")
 done

@@ -1,12 +1,13 @@
-# homeserver
+# obento
 
-One repo that turns a fresh **Ubuntu Server 24.04 LTS** install into a home server for a family: photos,
-passwords, files, media and network-wide ad blocking on one machine in your house, with drive-health alerts,
-snapshots and off-site backup. Nothing is published to the internet. Everyone reaches the apps through
+Everything a family home server needs, packed into one box. obento turns a fresh **Ubuntu Server 24.04 LTS**
+install into a home server for photos, passwords, files, media and network-wide ad blocking, with drive-health
+alerts, snapshots and off-site backup. Nothing is published to the internet. Everyone reaches the apps through
 **Tailscale**, a private network (a "tailnet") that joins your own devices wherever they are.
 
-It was built by one person for one machine, whose hostname is `tamago`. The code works on other hardware,
-but some settings are specific to that build; [Make it yours](#make-it-yours) lists each one.
+It was built by one person for one machine, whose hostname is `tamago`, so addresses in the docs say `tamago`;
+the apps are managed with the `obento` command. The code works on other hardware, but some settings are
+specific to that build; [Make it yours](#make-it-yours) lists each one.
 
 > **Status:** in daily use on the author's server, with every app running from the SSD. The hard-drive stages
 > (burn-in, creating the pool, moving data onto it: runbook steps 4–6) are written but haven't been run yet.
@@ -75,12 +76,12 @@ The [runbook](docs/RUNBOOK.md) is the step-by-step guide; this is the shape of i
 
 1. **Install Ubuntu Server 24.04 LTS** on the SSD with OpenSSH enabled, then get it online and add your SSH key.
    Leave the hard drives alone. → [RUNBOOK step 1](docs/RUNBOOK.md#1-install-ubuntu-server-2404-lts)
-2. **Get the repo onto the server** at `~/homeserver` (a clone of your fork, or `rsync` from your computer),
+2. **Get the repo onto the server** at `~/obento` (a clone of your fork, or `rsync` from your computer),
    then copy the settings file and fill it in. Every `change-me` value needs a real one; `.env.example`
    explains each setting. → [RUNBOOK step 2](docs/RUNBOOK.md#2-bootstrap)
 
    ```bash
-   cd ~/homeserver
+   cd ~/obento
    cp .env.example .env && chmod 600 .env && nano .env
    ```
 
@@ -96,11 +97,11 @@ The [runbook](docs/RUNBOOK.md) is the step-by-step guide; this is the shape of i
 4. **Start the apps** and create the first accounts. → [RUNBOOK step 3](docs/RUNBOOK.md#3-apps-on-the-ssd-until-the-drives-arrive)
 
    ```bash
-   tamago up
-   tamago status
+   obento up
+   obento status
    ```
 
-Set `OPENCLOUD_ADMIN_PASSWORD` before the first `tamago up`: OpenCloud only reads it on its first start.
+Set `OPENCLOUD_ADMIN_PASSWORD` before the first `obento up`: OpenCloud only reads it on its first start.
 Then set up your devices with [docs/MAC-SETUP.md](docs/MAC-SETUP.md) and [docs/IOS-SETUP.md](docs/IOS-SETUP.md).
 
 ## Make it yours
@@ -110,7 +111,6 @@ Things written for the author's setup, where to change them, and whether you nee
 | What | Where | What to do |
 |---|---|---|
 | Hostname `tamago` | Chosen in the Ubuntu installer | Pick your own. Read `tamago` in the docs' addresses as your hostname; `install.sh` finds the real Tailscale name itself. |
-| The `tamago` command | `scripts/tamago`, linked to `/usr/local/bin/tamago` | Leave it: it's only the name of the app-management command. |
 | Username `brandon` | `docs/MAC-SETUP.md` (ssh config), RUNBOOK step 1 (`ssh-copy-id`) | Use your own account on the server. |
 | Repo address | RUNBOOK step 2 (deploy key, `git clone`) | Use your fork's address. |
 | Hardware workarounds | RUNBOOK steps 0–1: ASUS BIOS, Realtek RTL8125 Ethernet (needs the HWE kernel), MediaTek MT7922 Wi-Fi power saving, interface names `wlp131s0`/`eno1`, Ultrastar PWDIS/Molex note | Only follow the ones that match your hardware. `install.sh` holds the HWE kernel packages either way. |
@@ -141,39 +141,39 @@ drive that hasn't been tested.
 
 ## Day to day
 
-Manage the apps with `tamago` (it asks for your password, because it runs Docker with `sudo`):
+Manage the apps with `obento` (it asks for your password, because it runs Docker with `sudo`):
 
 ```bash
-tamago up [app...]        # start apps, or apply changes
-tamago stop [app...]      # stop apps;  tamago down stops and removes all of them (data is kept)
-tamago restart [app...]
-tamago status
-tamago logs -f [app...]
-tamago update [app...]    # download newer images, restart what changed
-tamago signups on|off     # let new Vaultwarden accounts be created, briefly
-tamago apps               # list app names;  tamago help for everything
+obento up [app...]        # start apps, or apply changes
+obento stop [app...]      # stop apps;  obento down stops and removes all of them (data is kept)
+obento restart [app...]
+obento status
+obento logs -f [app...]
+obento update [app...]    # download newer images, restart what changed
+obento signups on|off     # let new Vaultwarden accounts be created, briefly
+obento apps               # list app names;  obento help for everything
 ```
 
 **Making changes.** Edit your copy of the repo (on your computer, then push), and on the server:
 
 ```bash
-cd ~/homeserver && git pull && sudo ./install.sh
-tamago up                 # if you changed .env or the compose file
+cd ~/obento && git pull && sudo ./install.sh
+obento up                 # if you changed .env or the compose file
 ```
 
-Don't run `docker compose` from `~/homeserver/compose`: it wouldn't see the live settings. Use `tamago`.
+Don't run `docker compose` from `~/obento/compose`: it wouldn't see the live settings. Use `obento`.
 
 ### Where things live on the server
 
 | Location | What it is | Edit it? |
 |---|---|---|
-| `~/homeserver` | this repo (source of truth) | **yes**, then re-run `sudo ./install.sh` |
-| `/opt/homeserver` | installed copy that systemd timers and compose run from (root-owned) | no, overwritten by `install.sh` |
-| `/etc/homeserver/.env` | live settings and secrets (root only, 600) | no, copied from `~/homeserver/.env` |
+| `~/obento` | this repo (source of truth) | **yes**, then re-run `sudo ./install.sh` |
+| `/opt/obento` | installed copy that systemd timers and compose run from (root-owned) | no, overwritten by `install.sh` |
+| `/etc/obento/.env` | live settings and secrets (root only, 600) | no, copied from `~/obento/.env` |
 
 The scripts run as root from systemd, so they run from a root-owned copy that only root can change, and the
-secrets live where only root can read them. `/opt/homeserver/compose/.env` links to `/etc/homeserver/.env`,
-which is why `tamago` runs compose from there. Keep `~/homeserver/.env` at `chmod 600`. App data lives under
+secrets live where only root can read them. `/opt/obento/compose/.env` links to `/etc/obento/.env`,
+which is why `obento` runs compose from there. Keep `~/obento/.env` at `chmod 600`. App data lives under
 `/srv` on the SSD, and under `/tank` once the pool exists.
 
 Drive replacement, restore tests and manual kernel updates are in the
@@ -186,7 +186,7 @@ install.sh                 bootstrap (idempotent; doesn't touch the hard drives)
 .env.example               every setting and secret; copy to .env
 compose/docker-compose.yml the apps
 scripts/
-  tamago                   manage the apps: tamago up|down|stop|restart|status|logs|update|signups|apps
+  obento                   manage the apps: obento up|down|stop|restart|status|logs|update|signups|apps
   burnin.sh                SMART + badblocks burn-in for new/recertified drives (DESTRUCTIVE)
   create-pool.sh           ZFS mirror + datasets (refuses drives without a burn-in PASS)
   print-scrutiny-devices.sh  device lines for Scrutiny once the hard drives are in
@@ -202,7 +202,7 @@ config/
   nut/                     UPS monitoring and low-battery shutdown
   systemd/                 timers: backup, verify, capacity, scrub, health, maintenance
   pi/                      the author's pi coding agent settings (optional)
-  smartd.conf  sanoid.conf  52homeserver-unattended  docker-daemon.json  sshd-hardening.conf
+  smartd.conf  sanoid.conf  52obento-unattended  docker-daemon.json  sshd-hardening.conf
 docs/
   RUNBOOK.md               step by step: install → apps → burn-in → pool → migrate → imports → backup → ops
   DRIVE-PLAN.md            why the storage is set up this way (incl. the Akita NAS lessons)

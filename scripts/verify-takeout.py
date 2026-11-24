@@ -6,7 +6,7 @@ Lesson from the Akita article: his copy tool reported success while silently ski
 ~900 GB. Don't trust the importer; count the source yourself and diff it.
 
 Usage:
-  python3 -I scripts/verify-takeout.py /path/to/extracted/Takeout [--env /etc/homeserver/.env]
+  python3 -I scripts/verify-takeout.py /path/to/extracted/Takeout [--env /etc/obento/.env]
 
 What it does:
   1. Walks the extracted Takeout, collects unique media files (by filename + size; Takeout
@@ -79,7 +79,7 @@ def immich_assets(url, key):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("takeout")
-    ap.add_argument("--env", default="/etc/homeserver/.env")
+    ap.add_argument("--env", default="/etc/obento/.env")
     ap.add_argument("--out", default="missing.txt")
     a = ap.parse_args()
     env = load_env(a.env)

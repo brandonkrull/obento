@@ -1,6 +1,6 @@
 # Runbook
 
-Commands assume you're in the repo (`~/homeserver`) unless they say `/opt/homeserver`.
+Commands assume you're in the repo (`~/obento`) unless they say `/opt/obento`.
 
 ## 0. Hardware and BIOS (once)
 
@@ -96,35 +96,35 @@ ssh brandon@<server-ip>                       # should log in without the passwo
 
 Get the repo onto the server. The repo is private, so either give the server a read-only **deploy key**
 (recommended: it can pull updates itself, but can't push or see your other repos), or copy it from your Mac
-with `rsync -a ~/path/to/homeserver/ <server>:homeserver/`.
+with `rsync -a ~/path/to/obento/ <server>:obento/`.
 
 Deploy key (optional):
 
 ```bash
 # on the server
-ssh-keygen -t ed25519 -N "" -C "tamago deploy key (read-only)" -f ~/.ssh/github_homeserver
-cat ~/.ssh/github_homeserver.pub
+ssh-keygen -t ed25519 -N "" -C "tamago deploy key (read-only)" -f ~/.ssh/github_obento
+cat ~/.ssh/github_obento.pub
 cat >> ~/.ssh/config <<'EOF'
 Host github.com
-  IdentityFile ~/.ssh/github_homeserver
+  IdentityFile ~/.ssh/github_obento
   IdentitiesOnly yes
 EOF
 chmod 600 ~/.ssh/config
 
 # on your Mac (or paste the .pub into GitHub → repo Settings → Deploy keys, leave "Allow write access" off)
-ssh tamago cat .ssh/github_homeserver.pub > /tmp/tamago.pub
-gh repo deploy-key add /tmp/tamago.pub -R brandonkrull/homeserver --title "tamago (read-only)"
+ssh tamago cat .ssh/github_obento.pub > /tmp/tamago.pub
+gh repo deploy-key add /tmp/tamago.pub -R brandonkrull/obento --title "tamago (read-only)"
 
 # on the server: check GitHub's key fingerprint against
 # https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/githubs-ssh-key-fingerprints
 # when asked, then clone
-git clone git@github.com:brandonkrull/homeserver.git ~/homeserver
+git clone git@github.com:brandonkrull/obento.git ~/obento
 ```
 
 Then, either way:
 
 ```bash
-cd ~/homeserver
+cd ~/obento
 cp .env.example .env && chmod 600 .env && nano .env   # fill in every "change-me"
 sudo ./install.sh
 sudo tailscale up --ssh
@@ -138,9 +138,9 @@ Email too (optional): ntfy.sh only emails for signed-in accounts. Create a free 
 verify your email address there, and create an access token (**Account → Access tokens**). Put the address in
 `NTFY_EMAIL` and the token in `NTFY_TOKEN` in `.env`, then re-run `sudo ./install.sh`. Free accounts get 5 emails a day. High and urgent alerts (drive,
 backup, pool, UPS problems) and Scrutiny's warnings are then also emailed; routine ones stay notification-only.
-Test it with `sudo homeserver-notify high "Email test" "If this arrived by email, alerts will too."`
+Test it with `sudo obento-notify high "Email test" "If this arrived by email, alerts will too."`
 
-Later changes: edit and push from your Mac, then on the server `cd ~/homeserver && git pull && sudo ./install.sh`
+Later changes: edit and push from your Mac, then on the server `cd ~/obento && git pull && sudo ./install.sh`
 (the deploy key is read-only, so don't edit on the server).
 
 `install.sh` also installs **pi** (the coding agent) for your account, set up to use `qwen36-moe` on
@@ -160,8 +160,8 @@ To set up devices to use them, see `docs/MAC-SETUP.md` (Tailscale, `ssh tamago`,
 and `docs/IOS-SETUP.md` (iPhone and iPad, for the whole family).
 
 ```bash
-tamago up        # starts every app (asks for your password); 'tamago help' lists the other commands
-tamago status
+obento up        # starts every app (asks for your password); 'obento help' lists the other commands
+obento status
 ```
 
 Where to find them (on any device signed into Tailscale; at home you can also use the server's LAN IP):
@@ -187,8 +187,8 @@ the end). It needs **HTTPS Certificates** turned on in the Tailscale admin conso
   as `admin`, then create an account per person under **Admin settings → Users**. Install the OpenCloud desktop
   and phone apps and point them at https://tamago.<tailnet>.ts.net:9200. It needs the HTTPS address, so it only
   works once Tailscale is up and `install.sh` has run since.
-- Vaultwarden: sign-ups are off by default. To create the family's accounts, run `tamago signups on`,
-  create them at https://tamago.<tailnet>.ts.net:8443, then `tamago signups off` (any `tamago up` also turns them off).
+- Vaultwarden: sign-ups are off by default. To create the family's accounts, run `obento signups on`,
+  create them at https://tamago.<tailnet>.ts.net:8443, then `obento signups off` (any `obento up` also turns them off).
 - Jellyfin: copy files into `Movies`, `Shows` and `Music` under `MEDIA_LOCATION` (`install.sh` makes them yours,
   so no sudo: `rsync -a --progress "Film (2008)" tamago:/srv/media/Movies/`). Name them like
   `Movies/Film (2008)/Film (2008).mkv` and `Shows/Show/Season 01/Show S01E01.mkv`, then add one library per
@@ -230,13 +230,13 @@ If the dashboard doesn't load after the wizard (it picked port 80):
 
 ```bash
 sudo sed -i '/^http:/,/^[a-z]/ s/^\(  address: \).*/\10.0.0.0:3000/' /srv/adguard/conf/AdGuardHome.yaml
-tamago restart adguard
+obento restart adguard
 ```
 
 Forgot the admin password: from a Mac (it asks for the new password, then the server's sudo password):
 
 ```bash
-HASH=$(htpasswd -nB -C 10 <user> | cut -d: -f2-) && ssh -t tamago "sudo sed -i '/^users:/,/^[a-z]/ s|^\(    password: \).*|\1$HASH|' /srv/adguard/conf/AdGuardHome.yaml && tamago restart adguard"
+HASH=$(htpasswd -nB -C 10 <user> | cut -d: -f2-) && ssh -t tamago "sudo sed -i '/^users:/,/^[a-z]/ s|^\(    password: \).*|\1$HASH|' /srv/adguard/conf/AdGuardHome.yaml && obento restart adguard"
 ```
 
 ## 4. Drives arrive → burn-in (~3 days)
@@ -244,9 +244,9 @@ HASH=$(htpasswd -nB -C 10 <user> | cut -d: -f2-) && ssh -t tamago "sudo sed -i '
 ```bash
 lsblk -o NAME,SIZE,MODEL,SERIAL            # both 18 TB drives visible? If not: PWDIS / Molex
 ls -l /dev/disk/by-id/ | grep -v part | grep ata-
-sudo tmux new -s burnA 'sudo /opt/homeserver/scripts/burnin.sh /dev/disk/by-id/ata-WDC_WUH721818ALE604_AAAA'
+sudo tmux new -s burnA 'sudo /opt/obento/scripts/burnin.sh /dev/disk/by-id/ata-WDC_WUH721818ALE604_AAAA'
 # detach: Ctrl-b d
-sudo tmux new -s burnB 'sudo /opt/homeserver/scripts/burnin.sh /dev/disk/by-id/ata-WDC_WUH721818ALE604_BBBB'
+sudo tmux new -s burnB 'sudo /opt/obento/scripts/burnin.sh /dev/disk/by-id/ata-WDC_WUH721818ALE604_BBBB'
 ```
 
 You'll get ntfy alerts on start, PASS or FAIL. A FAIL → warranty claim with ServerPartDeals.
@@ -254,14 +254,14 @@ You'll get ntfy alerts on start, PASS or FAIL. A FAIL → warranty claim with Se
 ## 5. Create the pool
 
 ```bash
-sudo /opt/homeserver/scripts/create-pool.sh /dev/disk/by-id/ata-..._AAAA /dev/disk/by-id/ata-..._BBBB
-/opt/homeserver/scripts/print-scrutiny-devices.sh   # paste into ~/homeserver/compose scrutiny devices:, sudo ./install.sh, tamago up scrutiny
+sudo /opt/obento/scripts/create-pool.sh /dev/disk/by-id/ata-..._AAAA /dev/disk/by-id/ata-..._BBBB
+/opt/obento/scripts/print-scrutiny-devices.sh   # paste into ~/obento/compose scrutiny devices:, sudo ./install.sh, obento up scrutiny
 ```
 
 ## 6. Move Immich, Vaultwarden, OpenCloud and media onto the pool
 
 ```bash
-tamago stop immich-server immich-machine-learning vaultwarden opencloud jellyfin
+obento stop immich-server immich-machine-learning vaultwarden opencloud jellyfin
 sudo rsync -aHAX --info=progress2 /srv/immich/library/ /tank/photos/
 sudo rsync -aHAX /srv/vaultwarden/ /tank/vaultwarden/
 sudo rsync -aHAX --info=progress2 /srv/opencloud/data/ /tank/opencloud/
@@ -274,7 +274,7 @@ sudo rsync -aHAXn --checksum --itemize-changes /srv/media/ /tank/media/ | head
 ```
 
 Edit `.env`: `IMMICH_UPLOAD_LOCATION=/tank/photos`, `VAULTWARDEN_DATA=/tank/vaultwarden`,
-`OPENCLOUD_DATA=/tank/opencloud`, `MEDIA_LOCATION=/tank/media` → `sudo ./install.sh` → `tamago up`.
+`OPENCLOUD_DATA=/tank/opencloud`, `MEDIA_LOCATION=/tank/media` → `sudo ./install.sh` → `obento up`.
 Check photos, files and media load, then delete the old copies on the SSD a week later.
 `install.sh` gives you the `Movies`, `Shows` and `Music` folders on `/tank/media` too, so copying in stays sudo-free.
 OpenCloud's config (`/srv/opencloud/config`, small, holds its keys) stays on the SSD and is backed up nightly.
@@ -285,7 +285,7 @@ OpenCloud's config (`/srv/opencloud/config`, small, holds its keys) stays on the
 # immich-go (github.com/simulot/immich-go) — check its README for the current syntax
 immich-go upload from-google-photos --server=http://localhost:2283 --api-key=$IMMICH_API_KEY /path/to/takeout-*.zip
 # extract the Takeout zips to a folder, then compare independently:
-python3 -I /opt/homeserver/scripts/verify-takeout.py /path/to/extracted/Takeout --env /etc/homeserver/.env
+python3 -I /opt/obento/scripts/verify-takeout.py /path/to/extracted/Takeout --env /etc/obento/.env
 ```
 
 `missing.txt` must be empty (or every line explained) before moving on.
@@ -340,8 +340,8 @@ copied into OpenCloud's data folder directly: OpenCloud only knows about files u
      format; save them by hand).
    - A file Google marked as malware stops with "cannotDownloadAbusiveFile"; add `--drive-acknowledge-abuse` if
      you're sure you want it.
-5. **Let rclone sign in to OpenCloud.** Set `OPENCLOUD_APP_TOKENS=true` in `~/homeserver/.env`, then
-   `sudo ./install.sh && tamago up opencloud`. Create a token for your OpenCloud account (valid 3 days) and give it
+5. **Let rclone sign in to OpenCloud.** Set `OPENCLOUD_APP_TOKENS=true` in `~/obento/.env`, then
+   `sudo ./install.sh && obento up opencloud`. Create a token for your OpenCloud account (valid 3 days) and give it
    to rclone without saving it anywhere:
    ```bash
    sudo docker exec opencloud opencloud auth-app create --user-name=<your OpenCloud user> --expiration=72h
@@ -362,7 +362,7 @@ copied into OpenCloud's data folder directly: OpenCloud only knows about files u
    Then open **Google Drive** in OpenCloud on the web and in the desktop app, and spot-check a few files.
 7. **Family members**: repeat 4–6 per person, with their own remote (`rclone config` → name `gdrive-<name>`,
    signing in to *their* Google account), folder (`/tank/import/gdrive-<name>`) and OpenCloud user.
-8. **Clean up**: set `OPENCLOUD_APP_TOKENS=false` again, `sudo ./install.sh && tamago up opencloud`. Once every
+8. **Clean up**: set `OPENCLOUD_APP_TOKENS=false` again, `sudo ./install.sh && obento up opencloud`. Once every
    check passed, delete the copy (`sudo zfs destroy tank/import`). Remove rclone's access in your Google account
    (myaccount.google.com → **Security** → **Third-party apps**) and delete the Google Cloud project.
 
@@ -372,9 +372,9 @@ Keep Google Drive as it is until step 9 (off-site backup) has finished and been 
 
 1. Backblaze: create a **private** bucket + an application key limited to that bucket. Fill the restic vars in `.env`.
 2. Save `RESTIC_PASSWORD` in Vaultwarden **and** on paper in a drawer.
-3. `sudo ./install.sh && sudo /opt/homeserver/scripts/backup.sh --init`
-4. First run: `sudo systemctl start homeserver-backup` (1.6 TB upload takes days on home upload speeds; it resumes).
-5. When it finishes: `sudo /opt/homeserver/scripts/backup.sh --verify`.
+3. `sudo ./install.sh && sudo /opt/obento/scripts/backup.sh --init`
+4. First run: `sudo systemctl start obento-backup` (1.6 TB upload takes days on home upload speeds; it resumes).
+5. When it finishes: `sudo /opt/obento/scripts/backup.sh --verify`.
 
 **Only now cancel Google One.**
 
@@ -397,7 +397,7 @@ Keep Google Drive as it is until step 9 (off-site backup) has finished and been 
 ## Quarterly restore test
 
 ```bash
-sudo bash -c 'source /opt/homeserver/scripts/lib.sh; load_env; export RESTIC_REPOSITORY RESTIC_PASSWORD AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY
+sudo bash -c 'source /opt/obento/scripts/lib.sh; load_env; export RESTIC_REPOSITORY RESTIC_PASSWORD AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY
 restic restore latest --target /tmp/restore-test --include "/tank/photos/library" --verify 2>&1 | tail -5'
 # open a few random photos from /tmp/restore-test, then rm -rf /tmp/restore-test
 ```
@@ -408,11 +408,11 @@ restic restore latest --target /tmp/restore-test --include "/tank/photos/library
 2. If more than one drive shows errors: **stop.** Make sure last night's B2 backup succeeded (or run one) before touching anything.
 3. Replace the **weakest** drive first. Burn in the new drive (step 4) unless the pool is degraded and urgent.
 4. `sudo zpool replace tank <old-by-id> /dev/disk/by-id/<new>` and watch `zpool status` until the resilver finishes.
-5. Scrub afterwards: `sudo /opt/homeserver/scripts/scrub.sh`.
+5. Scrub afterwards: `sudo /opt/obento/scripts/scrub.sh`.
 
 Container logs are capped at 3 × 10 MB per app (`/etc/docker/daemon.json`). Docker upgrades don't stop the
 apps (live-restore). Nothing reboots on its own: when you get "Reboot needed", run `sudo reboot` at a quiet
-time. To see what ran: `journalctl -u homeserver-maintenance` and `sudo unattended-upgrade --dry-run -d`.
+time. To see what ran: `journalctl -u obento-maintenance` and `sudo unattended-upgrade --dry-run -d`.
 
 ## Kernel updates (manual)
 

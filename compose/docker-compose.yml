@@ -1,7 +1,7 @@
-# Family server stack. Installed to /opt/homeserver/compose, where .env links to /etc/homeserver/.env.
-# Manage it with 'tamago' (see 'tamago help'), not by running docker compose from the repo.
+# Family server stack. Installed to /opt/obento/compose, where .env links to /etc/obento/.env.
+# Manage it with 'obento' (see 'obento help'), not by running docker compose from the repo.
 # Remote access is via Tailscale (no ports exposed to the internet). See docs/RUNBOOK.md.
-name: homeserver
+name: obento
 
 services:
   # ---------------------------------------------------------------- Immich (photos)
@@ -68,7 +68,7 @@ services:
     container_name: vaultwarden
     image: vaultwarden/server:latest
     environment:
-      SIGNUPS_ALLOWED: ${VAULTWARDEN_SIGNUPS_ALLOWED:-false}   # only "tamago signups on" sets this, until the next "tamago up"
+      SIGNUPS_ALLOWED: ${VAULTWARDEN_SIGNUPS_ALLOWED:-false}   # only "obento signups on" sets this, until the next "obento up"
       WEBSOCKET_ENABLED: "true"
       TZ: ${TZ}
     volumes:
@@ -107,7 +107,7 @@ services:
   # ---------------------------------------------------------------- Files (Google Drive replacement)
   opencloud:
     container_name: opencloud
-    image: opencloudeu/opencloud:4      # production (stable) line; 'tamago update' pulls 4.x fixes
+    image: opencloudeu/opencloud:4      # production (stable) line; 'obento update' pulls 4.x fixes
     user: "1000:1000"                   # owns ${SSD_DATA}/opencloud and OPENCLOUD_DATA (install.sh)
     entrypoint: ["/bin/sh", "-c"]
     # init writes the config with random secrets on first start and fails harmlessly afterwards

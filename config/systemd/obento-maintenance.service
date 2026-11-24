@@ -5,6 +5,6 @@ Requires=docker.service
 
 [Service]
 Type=oneshot
-ExecStart=/opt/homeserver/scripts/maintenance.sh
+ExecStart=/opt/obento/scripts/maintenance.sh
 Nice=10
 IOSchedulingClass=idle
