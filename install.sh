@@ -133,7 +133,7 @@ if [[ -z "$PI_USER" || "$PI_USER" == root ]]; then
   warn "pi config not installed: run install.sh with sudo from your own account."
 else
   PI_DIR="$(getent passwd "$PI_USER" | cut -d: -f6)/.pi/agent"
-  install -d -m 700 -o "$PI_USER" -g "$(id -gn "$PI_USER")" "$PI_DIR"
+  install -d -m 700 -o "$PI_USER" -g "$(id -gn "$PI_USER")" "$(dirname "$PI_DIR")" "$PI_DIR"
   for f in models.json settings.json; do
     if [[ -f "$PI_DIR/$f" ]] && ! cmp -s "$REPO_DIR/config/pi/$f" "$PI_DIR/$f"; then
       warn "Kept your existing $PI_DIR/$f (differs from config/pi/$f)."
