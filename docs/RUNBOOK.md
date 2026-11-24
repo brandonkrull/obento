@@ -189,6 +189,10 @@ the end). It needs **HTTPS Certificates** turned on in the Tailscale admin conso
   works once Tailscale is up and `install.sh` has run since.
 - Vaultwarden: sign-ups are off by default. To create the family's accounts, run `tamago signups on`,
   create them at https://tamago.<tailnet>.ts.net:8443, then `tamago signups off` (any `tamago up` also turns them off).
+- Jellyfin: copy files into `Movies`, `Shows` and `Music` under `MEDIA_LOCATION` (`install.sh` makes them yours,
+  so no sudo: `rsync -a --progress "Film (2008)" tamago:/srv/media/Movies/`). Name them like
+  `Movies/Film (2008)/Film (2008).mkv` and `Shows/Show/Season 01/Show S01E01.mkv`, then add one library per
+  folder in **Dashboard → Libraries** (Jellyfin sees them under `/media`).
 - Scrutiny: `install.sh` points its alerts at your ntfy topic (early drive warnings, and a drive that stops
   reporting). Send a test alert with `curl -X POST http://tamago:8080/api/health/notify`.
 - Test with a few hundred photos (phone app → backup).

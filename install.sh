@@ -138,6 +138,11 @@ log "Directories on the SSD"
 install -d -m 755 "$SSD_DATA"/{immich,vaultwarden,adguard,jellyfin,scrutiny,media}
 ln -sf /etc/homeserver/.env /opt/homeserver/compose/.env
 install -d -m 755 "$IMMICH_UPLOAD_LOCATION" "$IMMICH_DB_LOCATION"
+# Media folders belong to whoever runs install.sh, so files can be copied in without sudo (Jellyfin only reads).
+MEDIA_DIR="${MEDIA_LOCATION:-$SSD_DATA/media}"
+MEDIA_USER="${SUDO_USER:-root}"
+install -d -m 755 "$MEDIA_DIR"
+install -d -m 755 -o "$MEDIA_USER" -g "$(id -gn "$MEDIA_USER")" "$MEDIA_DIR"/{Movies,Shows,Music}
 # OpenCloud runs as 1000:1000 (see compose); its config holds generated secrets.
 install -d -m 700 -o 1000 -g 1000 "$SSD_DATA/opencloud" "$SSD_DATA/opencloud/config" "${OPENCLOUD_DATA:-$SSD_DATA/opencloud/data}"
 case "${OPENCLOUD_ADMIN_PASSWORD:-}" in
