@@ -488,13 +488,16 @@ Unfinished downloads stay on the SSD (`/srv/downloads/incomplete`).
 6. **Prowlarr** (`indexers.`): **Indexers → Add** your indexer. **Settings → Apps** → add Sonarr
    (`http://sonarr:8989`, its API key, Prowlarr server `http://prowlarr:9696`) and Radarr
    (`http://radarr:7878`). Prowlarr now keeps their indexer lists in step.
-7. **Seerr** (`requests.`): choose Jellyfin, server `jellyfin` port `8096` (no SSL), sign in as the Jellyfin
+7. **Tell Jellyfin when something arrives**, so it shows up right away instead of at the next library scan:
+   in Jellyfin, **Dashboard → API Keys → +** (name it `sonarr-radarr`). In Sonarr and in Radarr, **Settings →
+   Connect → + → Emby / Jellyfin**: host `jellyfin`, port `8096`, the API key, **Update Library** on.
+8. **Seerr** (`requests.`): choose Jellyfin, server `jellyfin` port `8096` (no SSL), sign in as the Jellyfin
    admin, and set the external URL to `https://media.home.example.com`. Pick the libraries, then add Sonarr
    (`sonarr`, `8989`, root `/data/Shows`) and Radarr (`radarr`, `7878`, root `/data/Movies`) as the default
    servers. **Users → Import Jellyfin users**, and give family members the **Request** and **Auto-approve**
    permissions if their requests should start without you.
-8. **Check**: request one episode in Seerr. It should appear in SABnzbd's queue, then in Sonarr as
-   imported, then in Jellyfin (if it doesn't show up, **Dashboard → Libraries → Scan**).
+9. **Check**: request one episode in Seerr. It should appear in SABnzbd's queue, then in Sonarr as
+   imported, then in Jellyfin within a minute (if not, check the Connect entry in Sonarr: **Test**).
 
 Settings live in `/srv/{seerr,sonarr,radarr,prowlarr,sabnzbd}` on the SSD; they aren't in the off-site
 backup, but setting them up again takes the steps above.
