@@ -216,6 +216,7 @@ Drive replacement, restore tests and manual kernel updates are in the
 ## Repository layout
 
 ```
+AGENTS.md                  notes for coding agents changing this repo
 install.sh                 bootstrap (idempotent; doesn't touch the hard drives)
 .env.example               every setting and secret; copy to .env
 compose/docker-compose.yml the apps

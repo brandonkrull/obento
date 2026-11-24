@@ -2,3 +2,5 @@
 missing.txt
 __pycache__/
 .env.bak-*
+# Agents' notes about one server (see AGENTS.md "Memory"); never published
+MEMORY.md
