@@ -94,15 +94,47 @@ ssh brandon@<server-ip>                       # should log in without the passwo
 
 ## 2. Bootstrap
 
+Get the repo onto the server. The repo is private, so either give the server a read-only **deploy key**
+(recommended: it can pull updates itself, but can't push or see your other repos), or copy it from your Mac
+with `rsync -a ~/path/to/homeserver/ <server>:homeserver/`.
+
+Deploy key (optional):
+
 ```bash
-git clone <your repo> ~/homeserver && cd ~/homeserver
-cp .env.example .env && nano .env          # fill in every "change-me"
+# on the server
+ssh-keygen -t ed25519 -N "" -C "tamago deploy key (read-only)" -f ~/.ssh/github_homeserver
+cat ~/.ssh/github_homeserver.pub
+cat >> ~/.ssh/config <<'EOF'
+Host github.com
+  IdentityFile ~/.ssh/github_homeserver
+  IdentitiesOnly yes
+EOF
+chmod 600 ~/.ssh/config
+
+# on your Mac (or paste the .pub into GitHub → repo Settings → Deploy keys, leave "Allow write access" off)
+ssh tamago cat .ssh/github_homeserver.pub > /tmp/tamago.pub
+gh repo deploy-key add /tmp/tamago.pub -R brandonkrull/homeserver --title "tamago (read-only)"
+
+# on the server: check GitHub's key fingerprint against
+# https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/githubs-ssh-key-fingerprints
+# when asked, then clone
+git clone git@github.com:brandonkrull/homeserver.git ~/homeserver
+```
+
+Then, either way:
+
+```bash
+cd ~/homeserver
+cp .env.example .env && chmod 600 .env && nano .env   # fill in every "change-me"
 sudo ./install.sh
 sudo tailscale up --ssh
 sudo systemctl status smartmontools        # you should get a "test" ntfy alert per drive
 ```
 
 Install the **ntfy** app on your phone and subscribe to your `NTFY_TOPIC`.
+
+Later changes: edit and push from your Mac, then on the server `cd ~/homeserver && git pull && sudo ./install.sh`
+(the deploy key is read-only, so don't edit on the server).
 
 `install.sh` also installs **pi** (the coding agent) for your account, set up to use `qwen36-moe` on
 spark-e2ca (`config/pi/`, copied to `~/.pi/agent/`; an existing file there is kept). It reaches spark by its
