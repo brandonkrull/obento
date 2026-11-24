@@ -68,7 +68,7 @@ services:
     container_name: vaultwarden
     image: vaultwarden/server:latest
     environment:
-      SIGNUPS_ALLOWED: "false"     # create accounts with INVITATIONS / admin page
+      SIGNUPS_ALLOWED: ${VAULTWARDEN_SIGNUPS_ALLOWED:-false}   # only "tamago signups on" sets this, until the next "tamago up"
       WEBSOCKET_ENABLED: "true"
       TZ: ${TZ}
     volumes:

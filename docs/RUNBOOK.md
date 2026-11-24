@@ -173,9 +173,8 @@ the end). It needs **HTTPS Certificates** turned on in the Tailscale admin conso
   and re-run `sudo ./install.sh` (copies .env). Administration → Settings → Machine Learning: OpenVINO is used automatically.
   Video transcoding → hardware acceleration: **Quick Sync**.
 - AdGuard: http://tamago:3000 setup wizard. Later point your router's DNS at the server's LAN IP.
-- Vaultwarden: signups are disabled by default. To create the family's accounts,
-  temporarily set `SIGNUPS_ALLOWED: "true"` in `~/homeserver/compose/docker-compose.yml`, `sudo ./install.sh`,
-  `tamago up vaultwarden`, create accounts for the family, then set it back the same way.
+- Vaultwarden: sign-ups are off by default. To create the family's accounts, run `tamago signups on`,
+  create them at https://tamago.<tailnet>.ts.net:8443, then `tamago signups off` (any `tamago up` also turns them off).
 - Test with a few hundred photos (phone app → backup).
 
 **Start the Google Takeout now** (Google Photos only, .zip, 50 GB parts). It can take a day+ to prepare.
