@@ -298,18 +298,27 @@ How it works: `rclone` on the server copies Drive to a folder on the pool (Googl
 copied into OpenCloud's data folder directly: OpenCloud only knows about files uploaded through it.
 
 1. **Google sign-in for rclone.** rclone's built-in Google key is shared by every rclone user and gets throttled.
-   Make your own (once, ~10 minutes): console.cloud.google.com → new project → **APIs & Services** → enable
-   **Google Drive API** → **OAuth consent screen**: External, add yourself (and family members) as test users →
-   **Credentials** → **Create credentials → OAuth client ID** → Desktop app. Keep the client ID and secret for the
-   next step. (While the app is in "Testing", sign-ins last 7 days; enough for the import.)
+   Make your own (once, ~10 minutes) at console.cloud.google.com:
+   - New project (e.g. `tamago`) → **APIs & Services → Library** → enable **Google Drive API**.
+   - **Google Auth Platform** (older consoles: **OAuth consent screen**) → set up as **External**.
+   - **Audience → Test users → Add users**: every Google account whose Drive you'll copy. Without this, sign-in
+     fails with "tamago has not completed the Google verification process".
+   - **Clients** (or **Credentials → Create credentials → OAuth client ID**) → **Desktop app**. Keep the client ID
+     and secret for the next step.
+
+   While the app is in "Testing", sign-ins last 7 days; enough for the import (re-connect with
+   `rclone config reconnect gdrive:` if it expires).
 2. **Connect Drive** (on the server; the browser sign-in happens on the Mac):
    ```bash
    # rclone is installed by install.sh; on the Mac: brew install rclone
-   rclone config                      # n (new) → name: gdrive → drive → paste client ID and secret
-                                      # scope: 2 (drive.readonly) → leave the rest default
-                                      # "Use web browser to automatically authenticate?" → n
-   # rclone prints a 'rclone authorize "drive" "…"' command: run it on the Mac, sign in to Google,
-   # and paste the token it prints back into the server
+   rclone config     # n (new remote) → name: gdrive → storage: drive → paste client ID and secret
+                     # scope: drive.readonly (read everything, change nothing; drive.file and
+                     #   drive.appfolder can't see your existing files)
+                     # service_account_file: blank → advanced config: n
+                     # "Use web browser to automatically authenticate?" → n
+                     # → run the 'rclone authorize "drive" "…"' command it prints on the Mac, sign in
+                     #   (click Continue at "Google hasn't verified this app"), paste the token back
+                     # "Configure this as a Shared Drive?" → n → keep the remote
    rclone size gdrive:                # how much there is (Google Docs aren't counted)
    ```
 3. **Try a small folder first**: `rclone copy "gdrive:Some Folder" /tmp/gdrive-test --progress`, open a few
