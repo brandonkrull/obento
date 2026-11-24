@@ -172,7 +172,7 @@ Where to find them (on any device signed into Tailscale; at home you can also us
 | Vaultwarden | https://tamago.<tailnet>.ts.net:8443 (HTTPS only) |
 | OpenCloud | https://tamago.<tailnet>.ts.net:9200 (HTTPS only) |
 | Jellyfin | https://tamago.<tailnet>.ts.net:8920 or http://tamago:8096 |
-| AdGuard Home | http://tamago:3000 (first-run setup) |
+| AdGuard Home | http://tamago:3000 |
 | Scrutiny | http://tamago:8080 |
 
 `install.sh` sets up the HTTPS addresses with `tailscale serve` once Tailscale is connected (it prints them at
@@ -182,7 +182,7 @@ the end). It needs **HTTPS Certificates** turned on in the Tailscale admin conso
 - Immich: create the admin account, then **Account Settings → API Keys** → put it in `.env` as `IMMICH_API_KEY`
   and re-run `sudo ./install.sh` (copies .env). Administration → Settings → Machine Learning: OpenVINO is used automatically.
   Video transcoding → hardware acceleration: **Quick Sync**.
-- AdGuard: http://tamago:3000 setup wizard. Later point your router's DNS at the server's LAN IP.
+- AdGuard (network ad blocking), see "Ad blocking for the whole network" below.
 - OpenCloud: set `OPENCLOUD_ADMIN_PASSWORD` in `.env` **before** its first start (it's only used then), sign in
   as `admin`, then create an account per person under **Admin settings → Users**. Install the OpenCloud desktop
   and phone apps and point them at https://tamago.<tailnet>.ts.net:9200. It needs the HTTPS address, so it only
@@ -194,6 +194,37 @@ the end). It needs **HTTPS Certificates** turned on in the Tailscale admin conso
 - Test with a few hundred photos (phone app → backup).
 
 **Start the Google Takeout now** (Google Photos only, .zip, 50 GB parts). It can take a day+ to prepare.
+
+### Ad blocking for the whole network
+
+1. Setup wizard at http://tamago:3000:
+   - **Admin web interface: All interfaces, port 3000.** The wizard suggests 80, but only 3000 is published
+     (compose), so 80 leaves the dashboard unreachable.
+   - **DNS server: All interfaces, port 53.**
+   - Create the admin login and save it in Vaultwarden.
+2. **Settings → DNS settings**: upstream e.g. `https://dns.cloudflare.com/dns-query` and
+   `https://dns.quad9.net/dns-query`. **Filters → DNS blocklists**: the AdGuard DNS filter is on by default.
+3. Test from another machine: `dig @<server LAN IP> doubleclick.net +short` prints `0.0.0.0`.
+4. Whole home network: reserve the server's address in the Google Home app first, then **Wi-Fi → Settings →
+   Advanced networking → DNS → Custom** → the server's LAN IP. If the server is down, devices at home can't look
+   up websites until it's back (unless you add a public DNS server as secondary, which lets some ads through).
+5. Optional, away from home: Tailscale admin console → **DNS** → add nameserver = the server's Tailscale IP,
+   turn on **Override local DNS**. Same caveat for tailnet devices when the server is down.
+
+If ads still get through, **Query log** shows which device asked for what (often a device using the router's IPv6 DNS).
+
+If the dashboard doesn't load after the wizard (it picked port 80):
+
+```bash
+sudo sed -i '/^http:/,/^[a-z]/ s/^\(  address: \).*/\10.0.0.0:3000/' /srv/adguard/conf/AdGuardHome.yaml
+tamago restart adguard
+```
+
+Forgot the admin password: from a Mac (it asks for the new password, then the server's sudo password):
+
+```bash
+HASH=$(htpasswd -nB -C 10 <user> | cut -d: -f2-) && ssh -t tamago "sudo sed -i '/^users:/,/^[a-z]/ s|^\(    password: \).*|\1$HASH|' /srv/adguard/conf/AdGuardHome.yaml && tamago restart adguard"
+```
 
 ## 4. Drives arrive → burn-in (~3 days)
 

@@ -54,7 +54,7 @@ ssh tamago
 | Media | **Jellyfin Media Player**: `brew install --cask jellyfin-media-player` | `https://tamago.<tailnet>.ts.net:8920` |
 | Photos | Immich has no Mac app: use the browser (phones use the Immich app) | `https://tamago.<tailnet>.ts.net` |
 | Alerts | ntfy in the browser (allow notifications), or the phone app | `<NTFY_URL>/<NTFY_TOPIC>` from `.env`, e.g. `https://ntfy.sh/your-topic` |
-| Ad blocking admin | browser | `http://tamago:3000` (or the port you chose in AdGuard's setup) |
+| Ad blocking admin | browser | `http://tamago:3000` |
 | Drive health | browser | `http://tamago:8080` |
 
 ### OpenCloud
