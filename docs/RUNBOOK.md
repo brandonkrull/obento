@@ -215,8 +215,10 @@ the end). It needs **HTTPS Certificates** turned on in the Tailscale admin conso
    Google Wifi answers its devices' DNS itself and forwards to AdGuard, so the query log may show every request
    as coming from the router (`192.168.86.1`); blocking still covers every device. If the server is down,
    devices at home can't look up websites until it's back; to undo, set DNS back to **Automatic**.
-5. Optional, away from home: Tailscale admin console → **DNS** → add nameserver = the server's Tailscale IP,
-   turn on **Override local DNS**. Same caveat for tailnet devices when the server is down.
+5. Optional, away from home (wait until the server is reliably up): Tailscale admin console → **DNS** → add
+   nameserver = the server's Tailscale IP, turn on **Override DNS servers** (older consoles: **Override local
+   DNS**). If the server is down, tailnet devices can't look up websites while Tailscale is on. Turning the
+   override off disables it again; the nameserver entry can stay.
 
 If ads still get through, **Query log** shows which device asked for what (often a device using the router's IPv6 DNS).
 

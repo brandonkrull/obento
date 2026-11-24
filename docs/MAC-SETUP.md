@@ -26,17 +26,22 @@ Every app is reachable only inside your tailnet, so start here.
 
 ### Ad blocking, everywhere
 
-Nothing to set up on the Mac: while Tailscale is connected and **Use Tailscale DNS** is on, every app and browser
-looks up addresses through the server's ad blocker (AdGuard), on any network. At home the Wi-Fi does the same
-even with Tailscale off.
+At home, the Wi-Fi already sends every device through the server's ad blocker (AdGuard).
 
-- Check it: `dig +short doubleclick.net` prints `0.0.0.0`, and `tailscale dns status` lists the server's
-  Tailscale IP under **Resolvers**. Or open https://d3ward.github.io/toolz/adblock in a browser.
+Away from home it's optional and set for the whole tailnet by the admin (RUNBOOK, "Ad blocking for the whole
+network", step 5; it's off until the server is reliably up). When it's on, there's nothing to set up on the Mac:
+while Tailscale is connected and **Use Tailscale DNS** is on, every app and browser goes through AdGuard on any
+network.
+
+- Check it: `dig +short doubleclick.net` prints `0.0.0.0`, or open https://d3ward.github.io/toolz/adblock in a
+  browser. Away-from-home blocking is on when `tailscale dns status` lists the server's Tailscale IP under
+  **Resolvers**.
 - If a site or app breaks because something it needs is blocked, the admin can allow it in AdGuard
   (http://tamago:3000 → **Query log** → **Unblock**).
 - Macs you only *shared* tamago with (instead of inviting to the tailnet) don't get this: ad blocking comes with
   the tailnet's DNS settings, which shared devices don't use.
-- If the server is off, websites won't load while Tailscale is on: quit Tailscale until it's back.
+- With away-from-home blocking on, websites won't load while Tailscale is on and the server is off: quit
+  Tailscale until it's back.
 
 ## 2. Command line access to the server
 
@@ -100,7 +105,7 @@ API key from **Account Settings → API Keys**).
 ## When something doesn't load
 
 - Check Tailscale is connected (menu bar icon) and `ping tamago` works.
-- No websites load at all with Tailscale on, but they do with it off: the server (and its ad blocker) is down.
-  Quit Tailscale until it's back.
+- No websites load at all with Tailscale on, but they do with it off: the server (and its ad blocker) is down
+  and away-from-home blocking is on. Quit Tailscale until it's back.
 - On the server: `tamago status` shows which apps are running, `tamago logs <app>` shows why one isn't.
 - HTTPS addresses are set up by `sudo ./install.sh` on the server; it prints them at the end.
