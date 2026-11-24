@@ -173,6 +173,19 @@ MEDIA_DIR="${MEDIA_LOCATION:-$SSD_DATA/media}"
 MEDIA_USER="${SUDO_USER:-root}"
 install -d -m 755 "$MEDIA_DIR"
 install -d -m 755 -o "$MEDIA_USER" -g "$(id -gn "$MEDIA_USER")" "$MEDIA_DIR"/{Movies,Shows,Music}
+if [[ ",${COMPOSE_PROFILES:-}," == *,downloads,* ]]; then
+  [[ -n "${APPS_DOMAIN:-}" ]] || warn "COMPOSE_PROFILES has downloads but APPS_DOMAIN isn't set: those apps are only reachable through Traefik."
+  # Seerr, Sonarr, Radarr, Prowlarr and SABnzbd run as 1000:1000 (see compose).
+  install -d -m 755 -o 1000 -g 1000 "$SSD_DATA"/{sabnzbd,prowlarr,sonarr,radarr,seerr,downloads} \
+    "$SSD_DATA/downloads/incomplete" "$MEDIA_DIR/Downloads"
+  # SABnzbd refuses requests for names it doesn't know (its own container name is how Sonarr and Radarr
+  # reach it). Seed the list before its first start; after that it's in SABnzbd's settings (Config > Special).
+  if [[ ! -f "$SSD_DATA/sabnzbd/sabnzbd.ini" ]]; then
+    printf '[misc]\nhost_whitelist = sabnzbd, downloads.%s\n' "${APPS_DOMAIN:-}" > "$SSD_DATA/sabnzbd/sabnzbd.ini"
+    chown 1000:1000 "$SSD_DATA/sabnzbd/sabnzbd.ini"
+    chmod 600 "$SSD_DATA/sabnzbd/sabnzbd.ini"
+  fi
+fi
 # OpenCloud runs as 1000:1000 (see compose); its config holds generated secrets.
 install -d -m 700 -o 1000 -g 1000 "$SSD_DATA/opencloud" "$SSD_DATA/opencloud/config" "${OPENCLOUD_DATA:-$SSD_DATA/opencloud/data}"
 case "${OPENCLOUD_ADMIN_PASSWORD:-}" in
@@ -249,6 +262,12 @@ if [[ -n "${APPS_DOMAIN:-}" ]]; then
   install -d -m 755 "$SSD_DATA/portal"
   portal_tmp="$(mktemp -d)"
   cp "$REPO_DIR"/config/homepage/* "$portal_tmp"/
+  # The Downloads tiles only when those apps run.
+  if [[ ",${COMPOSE_PROFILES:-}," == *,downloads,* ]]; then
+    cat "$portal_tmp/services-downloads.yaml" >> "$portal_tmp/services.yaml"
+    printf '  Downloads:\n    style: row\n    columns: 5\n' >> "$portal_tmp/settings.yaml"
+  fi
+  rm "$portal_tmp/services-downloads.yaml"
   if [[ -n "${PORTAL_TITLE:-}" ]]; then
     sed -i "s|^title: .*|title: \"${PORTAL_TITLE//\"/}\"|" "$portal_tmp/settings.yaml"
   fi

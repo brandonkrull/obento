@@ -104,6 +104,80 @@ services:
       - "8096:8096"
     restart: always
 
+  # ---------------------------------------------------------------- Automatic TV and film downloads (optional)
+  # Seerr takes requests, Sonarr (TV) and Radarr (films) find them through Prowlarr's indexers, SABnzbd
+  # downloads from Usenet, and finished downloads move into Shows/Movies for Jellyfin. Only starts with
+  # 'downloads' in COMPOSE_PROFILES, and needs APPS_DOMAIN: the apps listen on localhost only and are reached
+  # through Traefik (RUNBOOK "Automatic TV and film downloads").
+  # Everything sees MEDIA_LOCATION as /data, so a finished download in /data/Downloads moves into
+  # /data/Shows or /data/Movies instantly instead of being copied. Runs as 1000:1000, like OpenCloud.
+  sabnzbd:
+    container_name: sabnzbd
+    image: lscr.io/linuxserver/sabnzbd:latest
+    profiles: [downloads]
+    environment: &arr-env
+      PUID: "1000"
+      PGID: "1000"
+      UMASK: "002"
+      TZ: ${TZ}
+    volumes:
+      - ${SSD_DATA}/sabnzbd:/config
+      # Unfinished downloads stay on the SSD, so pool snapshots don't keep their pieces.
+      - ${SSD_DATA}/downloads/incomplete:/incomplete
+      - ${MEDIA_LOCATION:-/srv/media}:/data
+    ports:
+      - "127.0.0.1:8085:8080"
+    restart: always
+
+  prowlarr:
+    container_name: prowlarr
+    image: lscr.io/linuxserver/prowlarr:latest
+    profiles: [downloads]
+    environment: *arr-env
+    volumes:
+      - ${SSD_DATA}/prowlarr:/config
+    ports:
+      - "127.0.0.1:9696:9696"
+    restart: always
+
+  sonarr:
+    container_name: sonarr
+    image: lscr.io/linuxserver/sonarr:latest
+    profiles: [downloads]
+    environment: *arr-env
+    volumes:
+      - ${SSD_DATA}/sonarr:/config
+      - ${MEDIA_LOCATION:-/srv/media}:/data
+    ports:
+      - "127.0.0.1:8989:8989"
+    restart: always
+
+  radarr:
+    container_name: radarr
+    image: lscr.io/linuxserver/radarr:latest
+    profiles: [downloads]
+    environment: *arr-env
+    volumes:
+      - ${SSD_DATA}/radarr:/config
+      - ${MEDIA_LOCATION:-/srv/media}:/data
+    ports:
+      - "127.0.0.1:7878:7878"
+    restart: always
+
+  seerr:
+    container_name: seerr
+    image: ghcr.io/seerr-team/seerr:latest   # the merged Overseerr/Jellyseerr; runs as UID 1000
+    profiles: [downloads]
+    init: true
+    environment:
+      TZ: ${TZ}
+      LOG_LEVEL: info
+    volumes:
+      - ${SSD_DATA}/seerr:/app/config
+    ports:
+      - "127.0.0.1:5055:5055"
+    restart: always
+
   # ---------------------------------------------------------------- Files (Google Drive replacement)
   opencloud:
     container_name: opencloud

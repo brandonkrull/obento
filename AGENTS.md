@@ -74,7 +74,8 @@ them, and never suggest running them without the user confirming the exact `/dev
 Without `APPS_DOMAIN`, `install.sh` publishes apps through `tailscale serve`
 (`tamago.<tailnet>.ts.net` on 443/8443/8920/9200). With it (the author's setup), Traefik answers
 `photos.` / `passwords.` / `files.` / `media.` / `adblock.` / `drives.` `<APPS_DOMAIN>` and the portal at
-`<APPS_DOMAIN>`, and Tailscale serves nothing.
+`<APPS_DOMAIN>`, and Tailscale serves nothing. With `downloads` in `COMPOSE_PROFILES` too: `requests.` (Seerr),
+`tv.` (Sonarr), `movies.` (Radarr), `downloads.` (SABnzbd), `indexers.` (Prowlarr).
 
 | Port (host) | What |
 |---|---|
@@ -84,10 +85,15 @@ Without `APPS_DOMAIN`, `install.sh` publishes apps through `tailscale serve`
 | 3000 | AdGuard admin |
 | 3010 | portal (127.0.0.1 only) |
 | 3011 | UPS battery for the portal, `scripts/ups-status.py` (127.0.0.1 only) |
+| 5055 | Seerr (127.0.0.1 only) |
+| 7878 | Radarr (127.0.0.1 only) |
 | 8080 | Scrutiny |
+| 8085 | SABnzbd (127.0.0.1 only; 8080 inside its container) |
 | 8096 | Jellyfin |
 | 8222 | Vaultwarden |
+| 8989 | Sonarr (127.0.0.1 only) |
 | 9201 | OpenCloud (127.0.0.1 only) |
+| 9696 | Prowlarr (127.0.0.1 only) |
 
 Pick a free port (`ss -ltn` on the server) before adding a service. Things that bit us:
 

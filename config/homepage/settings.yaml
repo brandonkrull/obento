@@ -6,6 +6,7 @@ theme: dark
 color: slate
 headerStyle: clean
 hideVersion: true
+# Keep layout last: install.sh appends the Downloads group's entry when those apps run.
 layout:
   Family:
     style: row

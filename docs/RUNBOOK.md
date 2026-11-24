@@ -451,6 +451,54 @@ Keep Google Drive as it is until step 9 (off-site backup) has finished and been 
 
 **Only now cancel Google One.**
 
+## Automatic TV and film downloads (optional, after step 6)
+
+Someone asks for a show or film on a request page, and it appears in Jellyfin by itself. Five apps work
+together, each at its own address (the own-domain setup above is required):
+
+| App | What it does | Address |
+|---|---|---|
+| Seerr | The request page for the family; signs in with Jellyfin accounts | `https://requests.home.example.com` |
+| Sonarr | Finds and tracks TV shows, sorts them into `Shows` | `https://tv.home.example.com` |
+| Radarr | The same for films, into `Movies` | `https://movies.home.example.com` |
+| Prowlarr | Keeps the indexer accounts (where releases are found) and hands them to Sonarr and Radarr | `https://indexers.home.example.com` |
+| SABnzbd | Downloads from your Usenet provider | `https://downloads.home.example.com` |
+
+Turn it on after step 6, so downloads land on the pool rather than the SSD. You need two paid accounts: a
+**Usenet provider** (the server you download from) and at least one **indexer** (the search that tells
+Sonarr and Radarr what exists). Downloads from the provider are encrypted and nothing is uploaded, so no VPN
+is needed.
+
+Inside the apps, the media folder is `/data`: `/data/Shows`, `/data/Movies`, and `/data/Downloads` for
+finished downloads, all on the same pool dataset so finished downloads move into place instantly.
+Unfinished downloads stay on the SSD (`/srv/downloads/incomplete`).
+
+1. **Switch it on**: in `~/obento/.env`, `COMPOSE_PROFILES=domain,downloads`, then
+   `obento update && obento up && obento restart traefik portal`.
+2. **Sign-ins first.** Sonarr, Radarr and Prowlarr ask for a username and password on first visit: choose
+   **Forms** and **Enabled** (not "Disabled for local addresses": through Traefik every visitor looks
+   local). Save them in Vaultwarden.
+3. **SABnzbd** (`downloads.`): the wizard asks for your Usenet provider (server, port 563 with SSL, username,
+   password). Then **Config → Folders**: temporary folder `/incomplete`, completed folder `/data/Downloads`.
+   **Config → Categories**: add `tv` and `movies`. Note the API key (**Config → General**).
+4. **Sonarr** (`tv.`): **Settings → Media Management** → add root folder `/data/Shows`. **Settings → Download
+   Clients** → SABnzbd, host `sabnzbd`, port `8080`, the API key, category `tv`. Note Sonarr's API key
+   (**Settings → General**).
+5. **Radarr** (`movies.`): the same with root folder `/data/Movies` and category `movies`.
+6. **Prowlarr** (`indexers.`): **Indexers → Add** your indexer. **Settings → Apps** → add Sonarr
+   (`http://sonarr:8989`, its API key, Prowlarr server `http://prowlarr:9696`) and Radarr
+   (`http://radarr:7878`). Prowlarr now keeps their indexer lists in step.
+7. **Seerr** (`requests.`): choose Jellyfin, server `jellyfin` port `8096` (no SSL), sign in as the Jellyfin
+   admin, and set the external URL to `https://media.home.example.com`. Pick the libraries, then add Sonarr
+   (`sonarr`, `8989`, root `/data/Shows`) and Radarr (`radarr`, `7878`, root `/data/Movies`) as the default
+   servers. **Users → Import Jellyfin users**, and give family members the **Request** and **Auto-approve**
+   permissions if their requests should start without you.
+8. **Check**: request one episode in Seerr. It should appear in SABnzbd's queue, then in Sonarr as
+   imported, then in Jellyfin (if it doesn't show up, **Dashboard → Libraries → Scan**).
+
+Settings live in `/srv/{seerr,sonarr,radarr,prowlarr,sabnzbd}` on the SSD; they aren't in the off-site
+backup, but setting them up again takes the steps above.
+
 ## Routine (automatic)
 
 | What | When | Alert |

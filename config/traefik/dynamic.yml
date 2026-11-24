@@ -21,6 +21,22 @@ http:
     drives:
       rule: 'HostRegexp(`^drives\.`)'
       service: scrutiny
+    # Downloads (COMPOSE_PROFILES=downloads); these answer 502 while it's off.
+    requests:
+      rule: 'HostRegexp(`^requests\.`)'
+      service: seerr
+    tv:
+      rule: 'HostRegexp(`^tv\.`)'
+      service: sonarr
+    movies:
+      rule: 'HostRegexp(`^movies\.`)'
+      service: radarr
+    downloads:
+      rule: 'HostRegexp(`^downloads\.`)'
+      service: sabnzbd
+    indexers:
+      rule: 'HostRegexp(`^indexers\.`)'
+      service: prowlarr
     portal:                             # APPS_DOMAIN itself, and any name not listed above
       rule: 'HostRegexp(`.+`)'
       priority: 1
@@ -54,3 +70,23 @@ http:
       loadBalancer:
         servers:
           - url: http://127.0.0.1:3010
+    seerr:
+      loadBalancer:
+        servers:
+          - url: http://127.0.0.1:5055
+    sonarr:
+      loadBalancer:
+        servers:
+          - url: http://127.0.0.1:8989
+    radarr:
+      loadBalancer:
+        servers:
+          - url: http://127.0.0.1:7878
+    sabnzbd:
+      loadBalancer:
+        servers:
+          - url: http://127.0.0.1:8085
+    prowlarr:
+      loadBalancer:
+        servers:
+          - url: http://127.0.0.1:9696

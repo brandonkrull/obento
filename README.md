@@ -22,6 +22,7 @@ specific to that build; [Make it yours](#make-it-yours) lists each one.
 | [Jellyfin](https://jellyfin.org) | Movies, shows and music | `https://tamago.<tailnet>.ts.net:8920` | `https://media.<domain>` |
 | [AdGuard Home](https://adguard.com/adguard-home/overview.html) | Blocks ads and trackers for every device on the home network (DNS on port 53) | `http://tamago:3000` | `https://adblock.<domain>` |
 | [Scrutiny](https://github.com/AnalogJ/scrutiny) | Dashboard of drive health over time | `http://tamago:8080` | `https://drives.<domain>` |
+| Seerr, Sonarr, Radarr, Prowlarr, SABnzbd (optional) | A request page for shows and films that are then downloaded from Usenet into Jellyfin's library | — | `https://requests.<domain>` and friends |
 | Portal ([Homepage](https://gethomepage.dev)) | One page with every app, whether it's up, the server's CPU, memory and disk, and the UPS battery | — | `https://<domain>` |
 
 Out of the box, the HTTPS addresses come from `tailscale serve` and work only inside your tailnet; AdGuard and
@@ -138,6 +139,11 @@ and `sudo ./install.sh && obento up`. Step by step, including moving each device
 [RUNBOOK: Your own web addresses](docs/RUNBOOK.md#your-own-web-addresses-optional). Once it's on, the
 `tamago.<tailnet>.ts.net` addresses stop working, so move every device over the same day. Without these
 settings nothing changes: Traefik doesn't run and the Tailscale addresses above are used.
+
+With your own addresses in place, `COMPOSE_PROFILES=domain,downloads` adds **automatic TV and film
+downloads**: a request page (Seerr) that the family signs into with their Jellyfin accounts, Sonarr and Radarr
+to find what was asked for, and SABnzbd to download it from a Usenet provider (paid; no VPN needed).
+Setup: [RUNBOOK: Automatic TV and film downloads](docs/RUNBOOK.md#automatic-tv-and-film-downloads-optional-after-step-6).
 
 ## Make it yours
 
