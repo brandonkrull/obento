@@ -164,9 +164,18 @@ else
   done
   log "Immich https://$TS_DOMAIN  Vaultwarden https://$TS_DOMAIN:8443  Jellyfin https://$TS_DOMAIN:8920"
   log "OpenCloud https://$TS_DOMAIN:9200"
-  # OpenCloud must know its public address for sign-in redirects.
-  printf 'OC_URL=https://%s:9200\n' "$TS_DOMAIN" > /etc/homeserver/opencloud.env
-  chmod 600 /etc/homeserver/opencloud.env
+  # OpenCloud needs its public address, and must resolve it itself to check sign-ins (see compose).
+  TS_IP="$(tailscale ip -4 | head -1)"
+  cat > /opt/homeserver/compose/docker-compose.override.yml <<EOF
+# Written by install.sh from this machine's Tailscale name and IP; don't edit.
+services:
+  opencloud:
+    environment:
+      OC_URL: https://$TS_DOMAIN:9200
+    extra_hosts:
+      - "$TS_DOMAIN:$TS_IP"
+EOF
+  rm -f /etc/homeserver/opencloud.env
 fi
 
 homeserver-notify default "Bootstrap complete" "install.sh finished on $(hostname)"

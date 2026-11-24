@@ -112,11 +112,12 @@ services:
     entrypoint: ["/bin/sh", "-c"]
     # init writes the config with random secrets on first start and fails harmlessly afterwards
     command: ["opencloud init || true; opencloud server"]
-    env_file:
-      - path: /etc/homeserver/opencloud.env   # OC_URL, written by install.sh from the Tailscale name
-        required: false
+    # Host networking: OpenCloud checks sign-ins by fetching its own https://tamago.<tailnet>.ts.net:9200,
+    # and Tailscale serve only answers connections from this machine or the tailnet, not from Docker's network.
+    # install.sh writes OC_URL and the name -> Tailscale IP mapping into docker-compose.override.yml.
+    network_mode: host
     environment:
-      PROXY_HTTP_ADDR: "0.0.0.0:9200"
+      PROXY_HTTP_ADDR: "127.0.0.1:9201"   # only reachable through https://tamago.<tailnet>.ts.net:9200
       PROXY_TLS: "false"                # Tailscale serve terminates HTTPS
       OC_INSECURE: "false"
       IDM_ADMIN_PASSWORD: ${OPENCLOUD_ADMIN_PASSWORD:-}   # first start only; change it later in OpenCloud
@@ -126,8 +127,6 @@ services:
     volumes:
       - ${SSD_DATA}/opencloud/config:/etc/opencloud
       - ${OPENCLOUD_DATA:-/srv/opencloud/data}:/var/lib/opencloud
-    ports:
-      - "127.0.0.1:9201:9200"           # only reachable through https://tamago.<tailnet>.ts.net:9200
     restart: always
 
   # ---------------------------------------------------------------- Drive health dashboard
