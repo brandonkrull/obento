@@ -232,12 +232,15 @@ else
   log "OpenCloud https://$TS_DOMAIN:9200"
   # OpenCloud needs its public address, and must resolve it itself to check sign-ins (see compose).
   TS_IP="$(tailscale ip -4 | head -1)"
+  # App tokens let tools such as rclone sign in without the browser (Google Drive import, RUNBOOK step 8).
+  APP_TOKEN_ENV=""
+  [[ "${OPENCLOUD_APP_TOKENS:-}" == true ]] && APP_TOKEN_ENV=$'\n      OC_ADD_RUN_SERVICES: auth-app\n      PROXY_ENABLE_APP_AUTH: "true"'
   cat > /opt/homeserver/compose/docker-compose.override.yml <<EOF
 # Written by install.sh from this machine's Tailscale name and IP; don't edit.
 services:
   opencloud:
     environment:
-      OC_URL: https://$TS_DOMAIN:9200
+      OC_URL: https://$TS_DOMAIN:9200$APP_TOKEN_ENV
     extra_hosts:
       - "$TS_DOMAIN:$TS_IP"
 EOF

@@ -287,7 +287,76 @@ python3 -I /opt/homeserver/scripts/verify-takeout.py /path/to/extracted/Takeout 
 
 `missing.txt` must be empty (or every line explained) before moving on.
 
-## 8. Off-site backup
+## 8. Import Google Drive into OpenCloud
+
+Do this after step 6, so files land on the pool instead of the SSD (and don't have to be moved again). Steps
+1–3 below only need the SSD, so they can be done before the drives arrive, and step 2 tells you how big your
+Drive is.
+
+How it works: `rclone` on the server copies Drive to a folder on the pool (Google Docs, Sheets and Slides become
+.docx, .xlsx and .pptx), checks the copy, then uploads that folder into your OpenCloud account. Files can't be
+copied into OpenCloud's data folder directly: OpenCloud only knows about files uploaded through it.
+
+1. **Google sign-in for rclone.** rclone's built-in Google key is shared by every rclone user and gets throttled.
+   Make your own (once, ~10 minutes): console.cloud.google.com → new project → **APIs & Services** → enable
+   **Google Drive API** → **OAuth consent screen**: External, add yourself (and family members) as test users →
+   **Credentials** → **Create credentials → OAuth client ID** → Desktop app. Keep the client ID and secret for the
+   next step. (While the app is in "Testing", sign-ins last 7 days; enough for the import.)
+2. **Connect Drive** (on the server; the browser sign-in happens on the Mac):
+   ```bash
+   sudo apt install rclone            # on the Mac too: brew install rclone
+   rclone config                      # n (new) → name: gdrive → drive → paste client ID and secret
+                                      # scope: 2 (drive.readonly) → leave the rest default
+                                      # "Use web browser to automatically authenticate?" → n
+   # rclone prints a 'rclone authorize "drive" "…"' command: run it on the Mac, sign in to Google,
+   # and paste the token it prints back into the server
+   rclone size gdrive:                # how much there is (Google Docs aren't counted)
+   ```
+3. **Try a small folder first**: `rclone copy "gdrive:Some Folder" /tmp/gdrive-test --progress`, open a few
+   files (including a Google Doc, now a .docx), then `rm -rf /tmp/gdrive-test`.
+4. **Copy Drive to the pool** (in `tmux`; it resumes if you re-run it):
+   ```bash
+   sudo zfs create tank/import && sudo chown "$USER:" /tank/import
+   rclone copy gdrive: /tank/import/gdrive-$USER --progress --transfers 8 \
+     --log-file ~/gdrive-copy.log --log-level INFO
+   rclone check gdrive: /tank/import/gdrive-$USER --one-way    # must end with "0 differences found"
+   grep -c ERROR ~/gdrive-copy.log                             # must be 0
+   ```
+   - Google Docs exports have no checksum to compare, so `check` skips them; open a few to confirm.
+   - Not included: **Shared with me** (add `--drive-shared-with-me` in a separate run into another folder), shared
+     drives (`rclone config` a second remote and choose the shared drive), Google Forms, Sites and Maps (no export
+     format; save them by hand).
+   - A file Google marked as malware stops with "cannotDownloadAbusiveFile"; add `--drive-acknowledge-abuse` if
+     you're sure you want it.
+5. **Let rclone sign in to OpenCloud.** Set `OPENCLOUD_APP_TOKENS=true` in `~/homeserver/.env`, then
+   `sudo ./install.sh && tamago up opencloud`. Create a token for your OpenCloud account (valid 3 days) and give it
+   to rclone without saving it anywhere:
+   ```bash
+   sudo docker exec opencloud opencloud auth-app create --user-name=<your OpenCloud user> --expiration=72h
+   read -rs TOKEN                     # paste the token, then Enter (nothing is shown)
+   export RCLONE_CONFIG_OPENCLOUD_TYPE=webdav RCLONE_CONFIG_OPENCLOUD_VENDOR=owncloud \
+     RCLONE_CONFIG_OPENCLOUD_URL=https://tamago.<tailnet>.ts.net:9200/remote.php/webdav \
+     RCLONE_CONFIG_OPENCLOUD_USER=<your OpenCloud user> \
+     RCLONE_CONFIG_OPENCLOUD_PASS="$(printf %s "$TOKEN" | rclone obscure -)"
+   unset TOKEN
+   rclone lsd opencloud:              # lists your OpenCloud folders
+   ```
+6. **Upload into OpenCloud** (same shell, so the settings above still apply), then check:
+   ```bash
+   rclone copy /tank/import/gdrive-$USER "opencloud:Google Drive" --progress --transfers 4 \
+     --log-file ~/opencloud-upload.log --log-level INFO
+   rclone check /tank/import/gdrive-$USER "opencloud:Google Drive" --one-way   # "0 differences found"
+   ```
+   Then open **Google Drive** in OpenCloud on the web and in the desktop app, and spot-check a few files.
+7. **Family members**: repeat 4–6 per person, with their own remote (`rclone config` → name `gdrive-<name>`,
+   signing in to *their* Google account), folder (`/tank/import/gdrive-<name>`) and OpenCloud user.
+8. **Clean up**: set `OPENCLOUD_APP_TOKENS=false` again, `sudo ./install.sh && tamago up opencloud`. Once every
+   check passed, delete the copy (`sudo zfs destroy tank/import`). Remove rclone's access in your Google account
+   (myaccount.google.com → **Security** → **Third-party apps**) and delete the Google Cloud project.
+
+Keep Google Drive as it is until step 9 (off-site backup) has finished and been verified.
+
+## 9. Off-site backup
 
 1. Backblaze: create a **private** bucket + an application key limited to that bucket. Fill the restic vars in `.env`.
 2. Save `RESTIC_PASSWORD` in Vaultwarden **and** on paper in a drawer.
