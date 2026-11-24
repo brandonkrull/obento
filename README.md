@@ -27,5 +27,16 @@ docs/RUNBOOK.md            step-by-step: install → apps → burn-in → pool �
 
 Start with **docs/RUNBOOK.md**.
 
+## Where things live on the server
+
+| Location | What it is | Edit it? |
+|---|---|---|
+| `~/homeserver` | this repo (source of truth) | **yes**, then re-run `sudo ./install.sh` |
+| `/opt/homeserver` | installed copy that systemd timers and compose run from (root-owned) | no, overwritten by `install.sh` |
+| `/etc/homeserver/.env` | live settings and secrets (root only, 600) | no, copied from `~/homeserver/.env` |
+
+`/opt/homeserver/compose/.env` links to `/etc/homeserver/.env`, so run compose with `sudo`
+(`cd /opt/homeserver/compose && sudo docker compose up -d`). Keep `~/homeserver/.env` at `chmod 600`.
+
 > Status: written for this exact build, not yet run on the hardware. Read each script before running it,
 > especially `burnin.sh` (erases the drive you pass it) and `create-pool.sh`.

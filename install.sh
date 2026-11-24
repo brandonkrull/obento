@@ -60,6 +60,8 @@ apt-mark hold linux-image-generic linux-headers-generic linux-generic \
 log "Install repo to /opt/homeserver (systemd units run scripts from here)"
 install -d /opt/homeserver
 cp -a "$REPO_DIR/scripts" "$REPO_DIR/config" "$REPO_DIR/compose" "$REPO_DIR/docs" /opt/homeserver/
+# Root runs these from systemd, so only root may change them (cp -a keeps the repo owner).
+chown -R root:root /opt/homeserver
 chmod 755 /opt/homeserver/scripts/*
 ln -sf /opt/homeserver/scripts/notify /usr/local/bin/homeserver-notify
 
