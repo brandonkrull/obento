@@ -154,9 +154,12 @@ elif [[ -n "${NTFY_TOKEN:-}" ]]; then
   warn "Scrutiny alerts not set up: NTFY_TOKEN isn't supported here yet."
 else
   tmp="$(mktemp)"
-  # Shoutrrr ntfy URL: host and topic, HTTPS by default.
-  printf '%s\nnotify:\n  urls:\n    - "ntfy://%s/%s?title=%s"\n' \
-    "$SCRUTINY_MARK" "$(sed -E 's#^https?://##; s#/+$##' <<<"$NTFY_URL")" "$NTFY_TOPIC" "Scrutiny%20on%20$(hostname)" > "$tmp"
+  # Shoutrrr ntfy URL: host and topic, HTTPS by default; email= also emails it (see NTFY_EMAIL).
+  email_opt=""
+  [[ -n "${NTFY_EMAIL:-}" ]] && email_opt="&email=${NTFY_EMAIL//@/%40}"
+  printf '%s\nnotify:\n  urls:\n    - "ntfy://%s/%s?title=%s%s"\n' \
+    "$SCRUTINY_MARK" "$(sed -E 's#^https?://##; s#/+$##' <<<"$NTFY_URL")" "$NTFY_TOPIC" "Scrutiny%20on%20$(hostname)" \
+    "$email_opt" > "$tmp"
   if ! cmp -s "$tmp" "$SCRUTINY_CONF"; then
     install -m 600 "$tmp" "$SCRUTINY_CONF"
     # Scrutiny reads its config at start; restart it if it's already running.

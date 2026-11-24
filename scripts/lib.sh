@@ -22,9 +22,11 @@ notify() {
   local prio="$1" title="$2" msg="$3"
   logger -t homeserver "[$prio] $title: $msg" || true
   [[ -n "${NTFY_TOPIC:-}" ]] || return 0
-  local auth=()
+  local auth=() email=()
   [[ -n "${NTFY_TOKEN:-}" ]] && auth=(-H "Authorization: Bearer $NTFY_TOKEN")
-  curl -fsS -m 15 "${auth[@]}" \
+  # Email only what needs action, to stay within ntfy's daily email limit.
+  [[ -n "${NTFY_EMAIL:-}" && "$prio" =~ ^(high|urgent)$ ]] && email=(-H "Email: $NTFY_EMAIL")
+  curl -fsS -m 15 "${auth[@]}" "${email[@]}" \
     -H "Title: [$(hostname)] $title" -H "Priority: $prio" \
     -d "$msg" "${NTFY_URL%/}/$NTFY_TOPIC" >/dev/null || true
 }
