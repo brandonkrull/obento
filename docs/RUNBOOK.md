@@ -118,9 +118,8 @@ pi -p "Say hello"
 ## 3. Apps (on the SSD until the drives arrive)
 
 ```bash
-cd /opt/homeserver/compose
-sudo docker compose up -d
-sudo docker compose ps
+tamago up        # starts every app (asks for your password); 'tamago help' lists the other commands
+tamago status
 ```
 
 HTTPS inside your tailnet (needed for Vaultwarden, nicer everywhere):
@@ -136,7 +135,8 @@ sudo tailscale serve --bg --https=8920 http://localhost:8096   # Jellyfin
   Video transcoding → hardware acceleration: **Quick Sync**.
 - AdGuard: http://nas:3000 setup wizard. Later point your router's DNS at the NAS's LAN IP.
 - Vaultwarden: signups are disabled by default. To create the family's accounts,
-  temporarily set `SIGNUPS_ALLOWED: "true"`, create accounts for the family, set it back, `docker compose up -d`.
+  temporarily set `SIGNUPS_ALLOWED: "true"` in `~/homeserver/compose/docker-compose.yml`, `sudo ./install.sh`,
+  `tamago up vaultwarden`, create accounts for the family, then set it back the same way.
 - Test with a few hundred photos (phone app → backup).
 
 **Start the Google Takeout now** (Google Photos only, .zip, 50 GB parts). It can take a day+ to prepare.
@@ -157,13 +157,13 @@ You'll get ntfy alerts on start, PASS or FAIL. A FAIL → warranty claim with Se
 
 ```bash
 sudo /opt/homeserver/scripts/create-pool.sh /dev/disk/by-id/ata-..._AAAA /dev/disk/by-id/ata-..._BBBB
-/opt/homeserver/scripts/print-scrutiny-devices.sh   # paste into compose scrutiny devices:, then docker compose up -d
+/opt/homeserver/scripts/print-scrutiny-devices.sh   # paste into ~/homeserver/compose scrutiny devices:, sudo ./install.sh, tamago up scrutiny
 ```
 
 ## 6. Move Immich (and Vaultwarden) onto the pool
 
 ```bash
-cd /opt/homeserver/compose && sudo docker compose stop immich-server immich-machine-learning vaultwarden
+tamago stop immich-server immich-machine-learning vaultwarden
 sudo rsync -aHAX --info=progress2 /srv/immich/library/ /tank/photos/
 sudo rsync -aHAX /srv/vaultwarden/ /tank/vaultwarden/
 # verify BEFORE switching (lesson: never trust a silent copy)
@@ -172,7 +172,7 @@ sudo rsync -aHAXn --checksum --itemize-changes /srv/vaultwarden/ /tank/vaultward
 ```
 
 Edit `.env`: `IMMICH_UPLOAD_LOCATION=/tank/photos`, `VAULTWARDEN_DATA=/tank/vaultwarden`,
-`MEDIA_LOCATION=/tank/media` → `sudo ./install.sh` → `cd /opt/homeserver/compose && sudo docker compose up -d`.
+`MEDIA_LOCATION=/tank/media` → `sudo ./install.sh` → `tamago up`.
 Check photos load, then delete the old copies on the SSD a week later.
 
 ## 7. Import Google Photos and verify

@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+# Usage: tamago <command> [app...]   Manage the apps in /opt/homeserver/compose. See 'tamago help'.
+set -euo pipefail
+
+COMPOSE_DIR=/opt/homeserver/compose
+
+usage() {
+  cat <<'EOF'
+Usage: tamago <command> [app...]
+
+Start, stop and check the home server's apps (Immich, Vaultwarden, AdGuard, Jellyfin, Scrutiny).
+Apps are the service names in docker-compose.yml; leave them out to act on all of them.
+
+Commands:
+  up [app...]           start (or apply changes to) apps
+  down                  stop and remove all apps (data is kept)
+  stop [app...]         stop apps without removing them
+  restart [app...]      restart apps
+  status                list apps and whether they're running
+  logs [-f] [app...]    show recent logs; -f keeps following
+  update [app...]       download newer images, then restart what changed
+  apps                  list app names
+  help                  show this help
+
+Runs docker compose with sudo from /opt/homeserver/compose, so it uses the live settings in
+/etc/homeserver/.env. After changing ~/homeserver, run 'sudo ./install.sh' there first.
+EOF
+}
+
+compose() {
+  [[ -f "$COMPOSE_DIR/docker-compose.yml" ]] || { echo "tamago: $COMPOSE_DIR not installed; run 'sudo ./install.sh' in ~/homeserver" >&2; exit 1; }
+  local sudo=()
+  [[ $EUID -eq 0 ]] || sudo=(sudo)
+  (cd "$COMPOSE_DIR" && "${sudo[@]}" docker compose "$@")
+}
+
+cmd="${1:-help}"
+(( $# )) && shift
+case "$cmd" in
+  up)               compose up -d "$@" ;;
+  down)             (( $# == 0 )) || { echo "tamago: 'down' acts on all apps; use 'stop <app>' for one" >&2; exit 2; }
+                    compose down ;;
+  stop|restart)     compose "$cmd" "$@" ;;
+  status|ps)        compose ps --all ;;
+  logs)             follow=(); [[ "${1:-}" == -f ]] && { follow=(--follow); shift; }
+                    compose logs --tail 100 "${follow[@]}" "$@" ;;
+  update)           compose pull "$@" && compose up -d "$@" ;;
+  apps)             compose config --services ;;
+  help|-h|--help)   usage ;;
+  *)                echo "tamago: unknown command '$cmd'" >&2; usage >&2; exit 2 ;;
+esac

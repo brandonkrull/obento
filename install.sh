@@ -64,6 +64,7 @@ cp -a "$REPO_DIR/scripts" "$REPO_DIR/config" "$REPO_DIR/compose" "$REPO_DIR/docs
 chown -R root:root /opt/homeserver
 chmod 755 /opt/homeserver/scripts/*
 ln -sf /opt/homeserver/scripts/notify /usr/local/bin/homeserver-notify
+ln -sf /opt/homeserver/scripts/tamago /usr/local/bin/tamago
 
 log "Drive health monitoring (smartd)"
 install -m 644 "$REPO_DIR/config/smartd.conf" /etc/smartd.conf
@@ -144,4 +145,4 @@ else
 fi
 
 homeserver-notify default "Bootstrap complete" "install.sh finished on $(hostname)"
-log "Done. Next: 'cd /opt/homeserver/compose && sudo docker compose up -d' (see docs/RUNBOOK.md)."
+log "Done. Next: 'tamago up' to start the apps (see docs/RUNBOOK.md)."

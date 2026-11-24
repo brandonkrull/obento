@@ -19,6 +19,7 @@ scripts/
   scrub.sh                 monthly scrub with report
   check-capacity.sh        80% / pool-health alerts
   health-report.sh         weekly SMART + per-drive latency report
+  tamago                   start/stop/check the apps: tamago up|down|stop|restart|status|logs|update
   notify / lib.sh          ntfy alerts used by everything (smartd, ZED, UPS, timers)
 config/                    smartd, sanoid, NUT (UPS), unattended-upgrades, sshd, systemd timers, pi
 docs/DRIVE-PLAN.md         why the storage is set up this way (incl. the Akita NAS lessons)
@@ -35,8 +36,8 @@ Start with **docs/RUNBOOK.md**.
 | `/opt/homeserver` | installed copy that systemd timers and compose run from (root-owned) | no, overwritten by `install.sh` |
 | `/etc/homeserver/.env` | live settings and secrets (root only, 600) | no, copied from `~/homeserver/.env` |
 
-`/opt/homeserver/compose/.env` links to `/etc/homeserver/.env`, so run compose with `sudo`
-(`cd /opt/homeserver/compose && sudo docker compose up -d`). Keep `~/homeserver/.env` at `chmod 600`.
+`/opt/homeserver/compose/.env` links to `/etc/homeserver/.env`, so manage the apps with `tamago` (it runs
+compose from there with `sudo`), not from `~/homeserver/compose`. Keep `~/homeserver/.env` at `chmod 600`.
 
 > Status: written for this exact build, not yet run on the hardware. Read each script before running it,
 > especially `burnin.sh` (erases the drive you pass it) and `create-pool.sh`.
