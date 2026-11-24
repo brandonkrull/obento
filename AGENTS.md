@@ -56,6 +56,8 @@ holds placeholders only. The ntfy topic is effectively a password: anyone who kn
 - Copy config with `install_conf` (copies only when content differs) and restart services with
   `restart_if_stale` (only when their config changed). smartd sends a test alert per drive on every restart,
   so unconditional restarts spam the family's phones.
+- `obento-apps-stop.service` runs `obento stop` at shutdown, because Docker's `live-restore` leaves the apps
+  running for systemd to kill. Never restart or stop it on a running server: that stops every app.
 - `apt-get` is wrapped to wait for unattended upgrades instead of failing on the dpkg lock.
 - Kernel packages are held on purpose (the HWE kernel is needed for the RTL8125 NIC; kernel updates are manual,
   RUNBOOK "Kernel updates"). Don't unhold them.

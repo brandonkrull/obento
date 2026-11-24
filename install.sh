@@ -149,6 +149,9 @@ systemctl daemon-reload
 systemctl enable --now obento-capacity.timer obento-scrub.timer obento-health.timer \
   obento-maintenance.timer
 # Backup timer is enabled by scripts/backup.sh --init once B2 is configured.
+# Stops the apps cleanly at shutdown (live-restore would leave them to be killed). Only ever enabled
+# here, never restarted: stopping it stops every app.
+systemctl enable --now obento-apps-stop.service
 # Ubuntu's built-in monthly scrub cron is replaced by our timer (which also alerts):
 [[ -f /etc/cron.d/zfsutils-linux ]] && sed -i 's/^\([^#].*zfs.*scrub.*\)$/# \1  # replaced by obento-scrub.timer/' /etc/cron.d/zfsutils-linux
 

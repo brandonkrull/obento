@@ -1,0 +1,20 @@
+# Stops the apps cleanly at shutdown and reboot, before Docker stops. Docker's live-restore (which keeps
+# the apps running while Docker itself restarts or updates) also means Docker leaves them running at
+# shutdown, where they'd otherwise all be killed at once (databases included). Starting this unit does
+# nothing; the apps come back at boot through their 'restart: always'.
+# Never restart this unit by hand: stopping it stops every app.
+[Unit]
+Description=Stop the apps cleanly at shutdown, before Docker
+# Wants, not Requires: a Docker restart or update must not stop the apps.
+Wants=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/bin/true
+ExecStop=/opt/obento/scripts/obento stop
+TimeoutStopSec=180
+
+[Install]
+WantedBy=multi-user.target
