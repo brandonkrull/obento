@@ -55,7 +55,7 @@ body,
 .service-card {
   background: var(--portal-bg) !important;
   border: 2px solid var(--portal-fg) !important;
-  border-radius: 18px !important;
+  border-radius: 6px !important;
   box-shadow: none !important;
   transition: background 0.15s, color 0.15s;
 }
@@ -68,6 +68,52 @@ body,
 
 .service-description {
   color: rgba(var(--portal-fg-rgb), 0.6) !important;
+}
+
+/* Tile layout: icon centered on top, name and description centered under it. Every tile is the same
+   height; a description too long for one line ends in an ellipsis. */
+.service-card {
+  height: 128px;
+}
+
+.service-title {
+  height: 100%;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 6px 12px;
+}
+
+.service-name {
+  max-width: 100%;
+  min-width: 0;
+}
+
+.service-description {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.service-icon {
+  width: auto !important;
+}
+
+.service-icon img,
+.service-icon > div {
+  width: 40px !important;
+  height: 40px !important;
+}
+
+.service-title-text {
+  width: 100%;
+  min-width: 0;
+  flex: 0 0 auto !important;
+  justify-content: center !important;
+}
+
+.service-name {
+  text-align: center !important;
 }
 
 /* App icons in black and white, in color on hover (Material icons are drawn in the text color) */
@@ -97,9 +143,18 @@ body,
   }
 }
 
-/* Status badge: keep its green/red text, drop the colored box */
-.service-tag,
-.service-site-monitor > div {
+/* Status badge: keep its green/red text, as a small pill inside the tile's top-right corner */
+.service-tags {
+  top: 8px !important;
+  right: 8px !important;
+  margin: 0 !important;
+}
+
+.service-tag {
+  background: transparent !important;
+}
+
+.site-monitor-status {
   background: transparent !important;
   border: 1px solid rgba(var(--portal-fg-rgb), 0.25) !important;
   border-radius: 999px !important;
