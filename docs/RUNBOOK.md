@@ -205,9 +205,16 @@ the end). It needs **HTTPS Certificates** turned on in the Tailscale admin conso
 2. **Settings → DNS settings**: upstream e.g. `https://dns.cloudflare.com/dns-query` and
    `https://dns.quad9.net/dns-query`. **Filters → DNS blocklists**: the AdGuard DNS filter is on by default.
 3. Test from another machine: `dig @<server LAN IP> doubleclick.net +short` prints `0.0.0.0`.
-4. Whole home network: reserve the server's address in the Google Home app first, then **Wi-Fi → Settings →
-   Advanced networking → DNS → Custom** → the server's LAN IP. If the server is down, devices at home can't look
-   up websites until it's back (unless you add a public DNS server as secondary, which lets some ads through).
+4. Whole home network, in the Google Home app (Google/Nest Wifi; search the app's settings for "DNS" if the
+   menus have moved):
+   1. Reserve the server's address so it never changes: **Devices → Wi-Fi → Settings (gear) → Advanced
+      networking → DHCP IP reservations → +** → pick the server → its current LAN IP → **Save**.
+   2. **Same Advanced networking → DNS → Custom** → **Primary server**: the server's LAN IP. Leave
+      **Secondary** empty (devices would sometimes use it and skip blocking) → **Save**.
+   3. Devices pick it up within minutes (toggle Wi-Fi to hurry one). Check AdGuard's **Query log** while browsing.
+   Google Wifi answers its devices' DNS itself and forwards to AdGuard, so the query log may show every request
+   as coming from the router (`192.168.86.1`); blocking still covers every device. If the server is down,
+   devices at home can't look up websites until it's back; to undo, set DNS back to **Automatic**.
 5. Optional, away from home: Tailscale admin console → **DNS** → add nameserver = the server's Tailscale IP,
    turn on **Override local DNS**. Same caveat for tailnet devices when the server is down.
 
