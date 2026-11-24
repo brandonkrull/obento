@@ -1,4 +1,4 @@
-# obento
+# 🍱 obento
 
 Everything a family home server needs, packed into one box. obento turns a fresh **Ubuntu Server 24.04 LTS**
 install into a home server for photos, passwords, files, media and network-wide ad blocking, with drive-health
