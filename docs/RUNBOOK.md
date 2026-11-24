@@ -11,13 +11,86 @@ Commands assume you're in the repo (`~/homeserver`) unless they say `/opt/homese
   - Advanced → Onboard Devices: leave the iGPU **enabled** (Quick Sync for Immich/Jellyfin).
   - Boot → **Restore AC Power Loss: Power On** (comes back after an outage).
   - Q-Fan: CPU fan "Standard"; chassis headers unused (fans run off the case switch).
-- Ethernet plugged in. Leave Wi-Fi off.
+- Ethernet plugged in if you can (more reliable for a NAS). The onboard 2.5 GbE port only works after the
+  newer kernel in step 1; until then use Wi-Fi.
 
 ## 1. Install Ubuntu Server 24.04 LTS
 
-- Flash the ISO to a USB stick (balenaEtcher or Rufus); install to the **NVMe**, default layout, enable OpenSSH,
-  import your SSH key from GitHub when asked.
+- Use the latest 24.04 point release (24.04.5 or newer).
+- Make the USB stick from a Mac (≥ 4 GB; **everything on it is erased**):
+
+  ```bash
+  cd ~/Downloads
+  curl -fLO https://releases.ubuntu.com/24.04/ubuntu-24.04.5-live-server-amd64.iso
+  curl -fsSL https://releases.ubuntu.com/24.04/SHA256SUMS | grep live-server | shasum -a 256 -c --ignore-missing
+  diskutil list external physical              # find the stick by size/name, e.g. /dev/disk5
+  diskutil unmountDisk /dev/diskN               # N = the stick; double-check it's not another drive
+  sudo dd if=ubuntu-24.04.5-live-server-amd64.iso of=/dev/rdiskN bs=4m status=progress
+  diskutil eject /dev/diskN
+  ```
+
+  macOS may say the disk is unreadable afterwards; click **Ignore** (that's expected).
+- Boot the server from the stick (F8 on ASUS for the boot menu, pick the **UEFI** USB entry); install to the
+  **NVMe**, default layout, enable OpenSSH.
+- **Skip the network** in the installer ("Continue without network"). Its installed kernel (6.8) can't see this
+  board's Ethernet (RTL8125 rev 0c), and Wi-Fi tends to fail during the installer's update downloads.
+  After the first boot, `systemd-networkd-wait-online` waits ~2 minutes; that's expected.
 - Don't install anything onto the hard drives.
+
+### After the first boot: network, kernel, SSH
+
+On the server's own keyboard:
+
+```bash
+ip -br link                                   # Wi-Fi is wl… (e.g. wlp131s0); Ethernet appears as eno1 after the kernel step
+sudo tee /etc/netplan/02-wifi.yaml >/dev/null <<'EOF'
+network:
+  version: 2
+  wifis:
+    wlp131s0:
+      dhcp4: true
+      access-points:
+        "YOUR_NETWORK_NAME":
+          password: "YOUR_WIFI_PASSWORD"
+EOF
+sudo chmod 600 /etc/netplan/02-wifi.yaml      # it holds the Wi-Fi password
+sudo netplan apply
+ping -c 3 ubuntu.com
+```
+
+Turn off Wi-Fi power saving. With it on (the MT7922 default), the server can reach the network but other
+devices can't reach it. It's re-applied every time the Wi-Fi connects, because the driver turns it back on:
+
+```bash
+sudo apt update && sudo apt install -y iw
+sudo tee /etc/networkd-dispatcher/routable.d/50-wifi-powersave-off >/dev/null <<'EOF'
+#!/bin/sh
+# Wi-Fi power saving makes the server unreachable from other devices on the network
+case "$IFACE" in wl*) /usr/sbin/iw dev "$IFACE" set power_save off ;; esac
+EOF
+sudo chmod 755 /etc/networkd-dispatcher/routable.d/50-wifi-powersave-off
+sudo systemctl enable --now networkd-dispatcher
+```
+
+Install the newer (HWE) kernel: it adds the Ethernet port and better Arrow Lake graphics support for Quick Sync.
+The 6.8 kernel stays in the boot menu as a fallback. This is a deliberate manual kernel upgrade (see "Kernel updates").
+
+```bash
+sudo apt install -y linux-generic-hwe-24.04 && sudo reboot
+uname -r                                      # after the reboot: 7.x
+iw dev wlp131s0 get power_save                # "off"
+```
+
+Ethernet, once a cable is in: add `/etc/netplan/01-ethernet.yaml` with `ethernets: eno1: dhcp4: true`
+(same shape as the Wi-Fi file), `chmod 600`, `sudo netplan apply`.
+
+SSH from your Mac, then reserve the server's address in your router (Google Home app) so it doesn't change:
+
+```bash
+ip -br addr                                   # on the server: note the address
+ssh-copy-id -i ~/.ssh/id_ed25519.pub brandon@<server-ip>   # on the Mac; asks for the server password once
+ssh brandon@<server-ip>                       # should log in without the password
+```
 
 ## 2. Bootstrap
 
@@ -145,9 +218,10 @@ restic restore latest --target /tmp/restore-test --include "/tank/photos/library
 ## Kernel updates (manual)
 
 ```bash
-sudo apt-mark unhold linux-image-generic linux-headers-generic linux-generic
+KERNEL_PKGS="linux-image-generic-hwe-24.04 linux-headers-generic-hwe-24.04 linux-generic-hwe-24.04"
+sudo apt-mark unhold $KERNEL_PKGS
 sudo apt update && sudo apt full-upgrade
-sudo apt-mark hold linux-image-generic linux-headers-generic linux-generic
+sudo apt-mark hold $KERNEL_PKGS
 sudo reboot
 ```
 

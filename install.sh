@@ -51,7 +51,8 @@ ufw --force enable
 
 log "Security updates automatic; kernel updates held (lesson: kernel regressions)"
 install -m 644 "$REPO_DIR/config/52homeserver-unattended" /etc/apt/apt.conf.d/52homeserver-unattended
-apt-mark hold linux-image-generic linux-headers-generic linux-generic >/dev/null 2>&1 || true
+apt-mark hold linux-image-generic linux-headers-generic linux-generic \
+  linux-image-generic-hwe-24.04 linux-headers-generic-hwe-24.04 linux-generic-hwe-24.04 >/dev/null 2>&1 || true
 
 log "Install repo to /opt/homeserver (systemd units run scripts from here)"
 install -d /opt/homeserver
