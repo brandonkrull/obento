@@ -241,6 +241,9 @@ if [[ -n "${APPS_DOMAIN:-}" ]]; then
   [[ -n "${DESEC_TOKEN:-}" ]] || warn "APPS_DOMAIN is set but DESEC_TOKEN isn't: Traefik can't get its certificate."
   [[ ",${COMPOSE_PROFILES:-}," == *,domain,* ]] || warn "APPS_DOMAIN is set: add COMPOSE_PROFILES=domain to .env so Traefik starts."
   install -d -m 700 "$SSD_DATA/traefik"
+  # The portal's tiles; edits belong in config/homepage (these copies are overwritten).
+  install -d -m 755 "$SSD_DATA/portal"
+  for f in "$REPO_DIR"/config/homepage/*.yaml; do install_conf 644 root "$f" "$SSD_DATA/portal/$(basename "$f")"; done
   # Traefik answers every app on 443 (config/traefik/dynamic.yml), so the Tailscale port addresses go away.
   SERVE_PORTS=()
   SERVE_OFF=(443 8443 8920 9200)
@@ -274,6 +277,7 @@ fi
 if [[ -n "${APPS_DOMAIN:-}" ]]; then
   log "Immich https://photos.$APPS_DOMAIN  Vaultwarden $VW_URL  OpenCloud $OC_URL"
   log "Jellyfin https://media.$APPS_DOMAIN  AdGuard https://adblock.$APPS_DOMAIN  Scrutiny https://drives.$APPS_DOMAIN"
+  log "Portal https://$APPS_DOMAIN"
 elif [[ -n "$TS_DOMAIN" ]]; then
   log "Immich https://$TS_DOMAIN  Vaultwarden https://$TS_DOMAIN:8443  Jellyfin https://$TS_DOMAIN:8920"
   log "OpenCloud $OC_URL"

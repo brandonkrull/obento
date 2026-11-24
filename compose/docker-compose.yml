@@ -161,6 +161,7 @@ services:
       - --entrypoints.websecure.address=:443
       - --entrypoints.websecure.http.tls.certresolver=le
       - --entrypoints.websecure.http.tls.domains[0].main=*.${APPS_DOMAIN:-}
+      - --entrypoints.websecure.http.tls.domains[0].sans=${APPS_DOMAIN:-}   # the portal itself
       # Traefik 3 stops reading a request after 60 s, which cuts off big Immich uploads.
       - --entrypoints.websecure.transport.respondingtimeouts.readtimeout=0s
       - --certificatesresolvers.le.acme.storage=/data/acme.json
@@ -171,6 +172,22 @@ services:
     volumes:
       - ../config/traefik/dynamic.yml:/etc/traefik/dynamic.yml:ro
       - ${SSD_DATA}/traefik:/data
+    restart: always
+
+  # The portal at https://<APPS_DOMAIN>: a tile per app with a status light (Homepage, gethomepage.dev).
+  # Its tiles are config/homepage/*.yaml, copied to ${SSD_DATA}/portal by install.sh.
+  portal:
+    container_name: portal
+    image: ghcr.io/gethomepage/homepage:latest
+    profiles: [domain]
+    network_mode: host                  # checks the apps on their localhost ports
+    environment:
+      HOSTNAME: 127.0.0.1               # only Traefik reaches it
+      PORT: "3010"
+      HOMEPAGE_ALLOWED_HOSTS: ${APPS_DOMAIN:-}
+      HOMEPAGE_VAR_DOMAIN: ${APPS_DOMAIN:-}
+    volumes:
+      - ${SSD_DATA}/portal:/app/config
     restart: always
 
 volumes:

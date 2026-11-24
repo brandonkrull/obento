@@ -256,11 +256,13 @@ Tailscale address, so they only work on devices signed into your tailnet.
 | Jellyfin | `https://media.home.example.com` |
 | AdGuard Home | `https://adblock.home.example.com` (`http://tamago:3000` also keeps working) |
 | Scrutiny | `https://drives.home.example.com` (`http://tamago:8080` also keeps working) |
+| Portal: every app on one page, with status lights | `https://home.example.com` |
 
 The `tamago.<tailnet>.ts.net` addresses stop working once you switch, so plan to update every device the same
 day (step 5).
 
-The names and the apps they lead to are in `config/traefik/dynamic.yml`.
+The names and the apps they lead to are in `config/traefik/dynamic.yml`; the portal's tiles are in
+`config/homepage/services.yaml`.
 
 How it works: Traefik (the `traefik` app) answers those names on port 443 with one Let's Encrypt certificate
 for `*.home.example.com`. To get it, the server proves it owns the name through **deSEC**, a free DNS host with
@@ -268,8 +270,9 @@ an API. Only the `home` part is handed to deSEC; the rest of your domain (websit
 Below, `home.example.com` stands for whatever you choose; it becomes `APPS_DOMAIN`.
 
 1. **deSEC**: sign up at desec.io → **Domains → +** → enter `home.example.com` (the full name) → in that
-   domain, add a record: Subname `*`, Type `A`, value the server's Tailscale IP (`tailscale ip -4` on the
-   server) → **Token Management → +** → copy the token (shown once).
+   domain, add two records, both Type `A` with the server's Tailscale IP (`tailscale ip -4` on the server):
+   Subname `*` (the apps) and Subname left empty (the portal at `home.example.com` itself) →
+   **Token Management → +** → copy the token (shown once).
 2. **Hand `home` to deSEC** at your domain's DNS host (Squarespace: **Domains** → your domain → **DNS** →
    **Custom records**), two records:
 
@@ -305,7 +308,7 @@ Below, `home.example.com` stands for whatever you choose; it becomes `APPS_DOMAI
      The vault is kept on each device, so nothing is lost meanwhile.
    - **Jellyfin**: add the new address as a server in the app and sign in.
 
-The certificate renews itself. If the server's Tailscale IP ever changes, update the `*` record at deSEC.
+The certificate renews itself. If the server's Tailscale IP ever changes, update both A records at deSEC.
 
 ## 4. Drives arrive → burn-in (~3 days)
 

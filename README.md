@@ -22,6 +22,7 @@ specific to that build; [Make it yours](#make-it-yours) lists each one.
 | [Jellyfin](https://jellyfin.org) | Movies, shows and music | `https://tamago.<tailnet>.ts.net:8920` | `https://media.<domain>` |
 | [AdGuard Home](https://adguard.com/adguard-home/overview.html) | Blocks ads and trackers for every device on the home network (DNS on port 53) | `http://tamago:3000` | `https://adblock.<domain>` |
 | [Scrutiny](https://github.com/AnalogJ/scrutiny) | Dashboard of drive health over time | `http://tamago:8080` | `https://drives.<domain>` |
+| Portal ([Homepage](https://gethomepage.dev)) | One page with every app, whether it's up, and the server's CPU, memory and disk | — | `https://<domain>` |
 
 Out of the box, the HTTPS addresses come from `tailscale serve` and work only inside your tailnet; AdGuard and
 Scrutiny are plain HTTP on the tailnet or home network. `<tailnet>` is your tailnet's name from the Tailscale
@@ -117,10 +118,12 @@ What it adds:
 
 - **Traefik**, one more app, which answers every name on port 443 and sends it to the right app
   (`config/traefik/dynamic.yml`).
-- **One Let's Encrypt certificate** for `*.home.example.com`, renewed automatically. To get it, the server
+- **A portal** at `https://home.example.com` with a tile per app and a status light (`config/homepage/`).
+- **One Let's Encrypt certificate** for `home.example.com` and `*.home.example.com`, renewed automatically. To get it, the server
   proves it owns the name through **[deSEC](https://desec.io)**, a free DNS host with an API.
 
-What you need: a domain, a free deSEC account with one `*` record pointing at the server's Tailscale IP, and
+What you need: a domain, a free deSEC account with two records (`*` and the name itself) pointing at the
+server's Tailscale IP, and
 two `NS` records at your domain's DNS host that hand just the `home` part to deSEC. Your website and email
 records stay where they are. Then three settings in `.env`:
 
@@ -234,6 +237,7 @@ config/
   systemd/                 timers: backup, verify, capacity, scrub, health, maintenance
   pi/                      the author's pi coding agent settings (optional)
   traefik/dynamic.yml      which own-domain address goes to which app (optional, see APPS_DOMAIN)
+  homepage/                the portal's tiles at https://<APPS_DOMAIN> (optional)
   smartd.conf  sanoid.conf  52obento-unattended  docker-daemon.json  sshd-hardening.conf
 docs/
   RUNBOOK.md               step by step: install → apps → burn-in → pool → migrate → imports → backup → ops

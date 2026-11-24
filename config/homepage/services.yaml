@@ -1,0 +1,33 @@
+# One tile per app. href is the address people use; siteMonitor is checked from the server for the status light.
+- Family:
+    - Photos:
+        icon: immich.png
+        href: https://photos.{{HOMEPAGE_VAR_DOMAIN}}
+        description: Immich, photo and video backup
+        siteMonitor: http://127.0.0.1:2283
+    - Passwords:
+        icon: vaultwarden.png
+        href: https://passwords.{{HOMEPAGE_VAR_DOMAIN}}
+        description: Vaultwarden, for the Bitwarden apps
+        siteMonitor: http://127.0.0.1:8222
+    - Files:
+        icon: mdi-cloud-outline
+        href: https://files.{{HOMEPAGE_VAR_DOMAIN}}
+        description: OpenCloud, files on every device
+        siteMonitor: http://127.0.0.1:9201
+    - Media:
+        icon: jellyfin.png
+        href: https://media.{{HOMEPAGE_VAR_DOMAIN}}
+        description: Jellyfin, movies, shows and music
+        siteMonitor: http://127.0.0.1:8096
+- Server:
+    - Ad blocking:
+        icon: adguard-home.png
+        href: https://adblock.{{HOMEPAGE_VAR_DOMAIN}}
+        description: AdGuard Home
+        siteMonitor: http://127.0.0.1:3000
+    - Drive health:
+        icon: scrutiny.png
+        href: https://drives.{{HOMEPAGE_VAR_DOMAIN}}
+        description: Scrutiny
+        siteMonitor: http://127.0.0.1:8080

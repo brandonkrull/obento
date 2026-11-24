@@ -21,6 +21,10 @@ http:
     drives:
       rule: 'HostRegexp(`^drives\.`)'
       service: scrutiny
+    portal:                             # APPS_DOMAIN itself, and any name not listed above
+      rule: 'HostRegexp(`.+`)'
+      priority: 1
+      service: portal
   services:
     immich:
       loadBalancer:
@@ -46,3 +50,7 @@ http:
       loadBalancer:
         servers:
           - url: http://127.0.0.1:8080
+    portal:
+      loadBalancer:
+        servers:
+          - url: http://127.0.0.1:3010
