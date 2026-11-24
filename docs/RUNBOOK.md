@@ -248,14 +248,17 @@ With a domain you own, apps get addresses like `photos.home.example.com` instead
 `tamago.<tailnet>.ts.net` ports. Nothing becomes reachable from the internet: the names point at the server's
 Tailscale address, so they only work on devices signed into your tailnet.
 
-| App | Address | Old address afterwards |
-|---|---|---|
-| Immich | `https://photos.home.example.com` | stops (Traefik takes port 443) |
-| Vaultwarden | `https://passwords.home.example.com` | keeps working while devices move over |
-| OpenCloud | `https://files.home.example.com` | stops (it signs in at one address only) |
-| Jellyfin | `https://media.home.example.com` | keeps working |
-| AdGuard Home | `https://adblock.home.example.com` | `http://tamago:3000` keeps working |
-| Scrutiny | `https://drives.home.example.com` | `http://tamago:8080` keeps working |
+| App | Address |
+|---|---|
+| Immich | `https://photos.home.example.com` |
+| Vaultwarden | `https://passwords.home.example.com` |
+| OpenCloud | `https://files.home.example.com` |
+| Jellyfin | `https://media.home.example.com` |
+| AdGuard Home | `https://adblock.home.example.com` (`http://tamago:3000` also keeps working) |
+| Scrutiny | `https://drives.home.example.com` (`http://tamago:8080` also keeps working) |
+
+The `tamago.<tailnet>.ts.net` addresses stop working once you switch, so plan to update every device the same
+day (step 5).
 
 The names and the apps they lead to are in `config/traefik/dynamic.yml`.
 
@@ -289,7 +292,7 @@ Below, `home.example.com` stands for whatever you choose; it becomes `APPS_DOMAI
    cd ~/obento && sudo ./install.sh && obento up
    ```
 
-   From here Immich's and OpenCloud's old addresses stop working (see the table above).
+   From here the old `tamago.<tailnet>.ts.net` addresses stop working.
 4. **Check**: open `https://photos.home.example.com`. The certificate takes a minute or two the first time;
    if it doesn't load, `obento logs traefik | grep -i -E "acme|error"` says why.
 5. **Move each app over**, on every device (docs/MAC-SETUP.md and docs/IOS-SETUP.md list the apps):
