@@ -20,8 +20,9 @@ we can agree on the shape first.
 - Update the docs in the same pull request: the README for what people get, the RUNBOOK for the steps, and the
   module table in `modules/README.md`.
 - Say how you tested it, and on what hardware.
+- Pull requests are reviewed by hand and squash-merged. Workflows (GitHub Actions) are off for this
+  repository, so a pull request can't run code here.
 
-**Security problems**: please don't open a public issue. Use GitHub's private vulnerability reporting
-(the repository's **Security** tab → **Report a vulnerability**).
+**Security problems**: please don't open a public issue; see [SECURITY.md](SECURITY.md).
 
 By contributing, you agree that your contribution is licensed under the [MIT License](LICENSE).
