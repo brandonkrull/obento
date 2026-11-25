@@ -14,20 +14,28 @@ specific to that build; [Make it yours](#make-it-yours) lists each one.
 
 ## What you get
 
-| App | What it's for | Address | With [your own domain](#optional-your-own-web-addresses) |
+**The core apps**, always installed:
+
+| App | What it's for | Address | With [your own domain](#domain-your-own-web-addresses-and-a-portal) |
 |---|---|---|---|
 | [Immich](https://immich.app) | Photo and video backup from phones (a Google Photos replacement) | `https://tamago.<tailnet>.ts.net` | `https://photos.<domain>` |
 | [Vaultwarden](https://github.com/dani-garcia/vaultwarden) | Family password manager; works with the Bitwarden apps | `https://tamago.<tailnet>.ts.net:8443` | `https://passwords.<domain>` |
-| [OpenCloud](https://opencloud.eu) | Files synced across devices (a Google Drive replacement) | `https://tamago.<tailnet>.ts.net:9200` | `https://files.<domain>` |
 | [Jellyfin](https://jellyfin.org) | Movies, shows and music | `https://tamago.<tailnet>.ts.net:8920` | `https://media.<domain>` |
 | [AdGuard Home](https://adguard.com/adguard-home/overview.html) | Blocks ads and trackers for every device on the home network (DNS on port 53) | `http://tamago:3000` | `https://adblock.<domain>` |
 | [Scrutiny](https://github.com/AnalogJ/scrutiny) | Dashboard of drive health over time | `http://tamago:8080` | `https://drives.<domain>` |
-| Seerr, Sonarr, Radarr, Prowlarr, SABnzbd (optional) | A request page for shows and films that are then downloaded from Usenet into Jellyfin's library | — | `https://requests.<domain>` and friends |
-| Portal ([Homepage](https://gethomepage.dev)) | One page with every app, whether it's up, the server's CPU, memory and disk, and the UPS battery | — | `https://<domain>` |
 
-Out of the box, the HTTPS addresses come from `tailscale serve` and work only inside your tailnet; AdGuard and
+**Modules**, the parts you choose (details in [Modules](#modules)):
+
+| Module | What it adds | Address |
+|---|---|---|
+| `opencloud` | Files synced across devices ([OpenCloud](https://opencloud.eu), a Google Drive replacement) | `https://tamago.<tailnet>.ts.net:9200`, or `https://files.<domain>` |
+| `ups` | Clean shutdown when a USB-connected UPS runs low, and power alerts | |
+| `domain` | Your own short addresses for every app, and a portal: one page with every app, whether it's up, and the server's CPU, memory, disk and UPS battery ([Homepage](https://gethomepage.dev)) | `https://<domain>` |
+| `downloads` | A request page for shows and films, which are then downloaded from Usenet into Jellyfin's library (Seerr, Sonarr, Radarr, Prowlarr, SABnzbd); needs `domain` | `https://requests.<domain>` and friends |
+
+Without `domain`, the HTTPS addresses come from `tailscale serve` and work only inside your tailnet; AdGuard and
 Scrutiny are plain HTTP on the tailnet or home network. `<tailnet>` is your tailnet's name from the Tailscale
-admin console. With a domain of your own, every app gets a short HTTPS name instead (still tailnet-only).
+admin console. With `domain`, every app gets a short HTTPS name instead (still tailnet-only).
 
 In the background, without you doing anything:
 
@@ -38,7 +46,8 @@ In the background, without you doing anything:
   overwritten file can be recovered.
 - **Off-site backup** every night with [restic](https://restic.net) to Backblaze B2, plus a monthly read-back
   check: photos, the Immich database, passwords, files and settings (not media).
-- **Clean shutdown** when the UPS battery runs low, so the pool isn't cut off mid-write.
+- **Clean shutdown** when the UPS battery runs low, so the pool isn't cut off mid-write (`ups` module), and
+  of every app in order whenever the server shuts down or reboots.
 - **Automatic updates** for Ubuntu, Docker, Tailscale and Node.js every night. Kernels are held back and
   upgraded by hand, and nothing reboots on its own.
 
@@ -55,7 +64,7 @@ including the lessons from AkitaOnRails' near-loss of a 90 TB NAS, is in [docs/D
 - An **Intel CPU with integrated graphics** is assumed: Immich and Jellyfin use Quick Sync for video, and
   Immich's face recognition uses the OpenVINO image. See [Make it yours](#make-it-yours) if yours differs.
 - Wired Ethernet if you can, and plenty of RAM (ZFS and Immich both use it).
-- Optional: a **UPS** with a USB data cable, so the server shuts down cleanly in an outage.
+- Optional: a **UPS** with a USB data cable, so the server shuts down cleanly in an outage (`ups` module).
 
 The author's build, as one example: Core Ultra 5 250K Plus, ASUS B860M-A, 32 GB DDR5, 512 GB NVMe, Jonsbo N6
 case, 2× WD Ultrastar HC550 18 TB (recertified), APC BE600M1 UPS.
@@ -68,7 +77,8 @@ case, 2× WD Ultrastar HC550 18 TB (recertified), APC BE600M1 UPS.
 | Required | An ntfy topic: a long random name on ntfy.sh, or your own ntfy server | Where every alert goes; subscribe to it in the ntfy phone app |
 | Optional | A [Backblaze B2](https://www.backblaze.com/cloud-storage) bucket and an application key for it | Off-site backup |
 | Optional | A free ntfy.sh account and access token | Emailing high and urgent alerts |
-| Optional | A domain you own and a free [deSEC](https://desec.io) account | Addresses like `photos.home.example.com` ([RUNBOOK](docs/RUNBOOK.md#your-own-web-addresses-optional)) |
+| `domain` module | A domain you own and a free [deSEC](https://desec.io) account | Addresses like `photos.home.example.com` ([RUNBOOK](docs/RUNBOOK.md#your-own-web-addresses-optional)) |
+| `downloads` module | A Usenet provider and an indexer (both paid) | Where shows and films come from ([RUNBOOK](docs/RUNBOOK.md#automatic-tv-and-film-downloads-optional-after-step-6)) |
 | Optional | A Google Cloud OAuth client | Importing Google Drive into OpenCloud ([RUNBOOK step 8](docs/RUNBOOK.md#8-import-google-drive-into-opencloud)) |
 
 **A computer to work from**, to write the USB installer, SSH into the server and keep your copy of this repo.
@@ -82,7 +92,8 @@ The [runbook](docs/RUNBOOK.md) is the step-by-step guide; this is the shape of i
    Leave the hard drives alone. → [RUNBOOK step 1](docs/RUNBOOK.md#1-install-ubuntu-server-2404-lts)
 2. **Get the repo onto the server** at `~/obento` (a clone of your fork, or `rsync` from your computer),
    then copy the settings file and fill it in. Every `change-me` value needs a real one; `.env.example`
-   explains each setting. → [RUNBOOK step 2](docs/RUNBOOK.md#2-bootstrap)
+   explains each setting. Pick your [modules](#modules) in `MODULES` (it starts as `opencloud,ups`; add
+   `domain` once your domain is ready). → [RUNBOOK step 2](docs/RUNBOOK.md#2-bootstrap)
 
    ```bash
    cd ~/obento
@@ -105,10 +116,30 @@ The [runbook](docs/RUNBOOK.md) is the step-by-step guide; this is the shape of i
    obento status
    ```
 
-Set `OPENCLOUD_ADMIN_PASSWORD` before the first `obento up`: OpenCloud only reads it on its first start.
-Then set up your devices with [docs/MAC-SETUP.md](docs/MAC-SETUP.md) and [docs/IOS-SETUP.md](docs/IOS-SETUP.md).
+With the `opencloud` module, set `OPENCLOUD_ADMIN_PASSWORD` before the first `obento up`: OpenCloud only reads
+it on its first start. Then set up your devices with [docs/MAC-SETUP.md](docs/MAC-SETUP.md) and
+[docs/IOS-SETUP.md](docs/IOS-SETUP.md).
 
-## Optional: your own web addresses
+## Modules
+
+The core apps are always there; everything else is a module you switch on in `.env`:
+
+```bash
+MODULES=domain,opencloud,ups,downloads    # the author's setup
+```
+
+then `obento update && obento up`. Taking one out and doing the same removes its apps, addresses and portal
+tiles; its data stays, so switching it back on picks up where it left off. `obento modules` shows which are
+on. Each module is one folder under [modules/](modules/README.md), which also explains how to add your own.
+
+| Module | Needs | Turning it on |
+|---|---|---|
+| `opencloud` | | Set `OPENCLOUD_ADMIN_PASSWORD` first ([RUNBOOK step 3](docs/RUNBOOK.md#3-apps-on-the-ssd-until-the-drives-arrive)) |
+| `ups` | A UPS on USB | Nothing more; check your model in `modules/ups/nut/ups.conf` ([Make it yours](#make-it-yours)) |
+| `domain` | A domain, deSEC | [Below](#domain-your-own-web-addresses-and-a-portal) |
+| `downloads` | `domain`, a Usenet provider and indexer | [Below](#downloads-automatic-tv-and-films) |
+
+### domain: your own web addresses and a portal
 
 If you own a domain, the apps can live at names like `photos.home.example.com` instead of
 `tamago.<tailnet>.ts.net:8443`-style ports. They're easier to remember and type into apps, and they don't
@@ -117,8 +148,9 @@ they only work on devices in your tailnet.
 
 What it adds:
 
-- **Traefik**, one more app, which answers every name on port 443 and sends it to the right app (the names
-  come from each module's `HOSTS`; `HOST_<NAME>` in `.env` renames one).
+- **Traefik**, one more app, which answers every name on port 443 and sends it to the right app. Each
+  module declares its names (`HOSTS` in its `module.conf`); rename one in `.env` with `HOST_<NAME>`, for
+  example `HOST_REQUESTS=ask` for `ask.home.example.com`.
 - **A portal** at `https://home.example.com` with a tile per app and a status light, plus the UPS battery
   (`modules/domain/homepage/`; `PORTAL_TITLE` and `PORTAL_LOGO` in `.env` add your own name and image).
 - **One Let's Encrypt certificate** for `home.example.com` and `*.home.example.com`, renewed automatically. To get it, the server
@@ -132,18 +164,30 @@ records stay where they are. Then three settings in `.env`:
 ```bash
 APPS_DOMAIN=home.example.com
 DESEC_TOKEN=<your deSEC token>
-MODULES=domain,opencloud,ups       # add domain to the modules you use
+MODULES=domain,opencloud,ups       # domain added to the modules you use
 ```
 
-and `sudo ./install.sh && obento up`. Step by step, including moving each device over:
+and `obento update && obento up`. Step by step, including moving each device over:
 [RUNBOOK: Your own web addresses](docs/RUNBOOK.md#your-own-web-addresses-optional). Once it's on, the
-`tamago.<tailnet>.ts.net` addresses stop working, so move every device over the same day. Without these
-settings nothing changes: Traefik doesn't run and the Tailscale addresses above are used.
+`tamago.<tailnet>.ts.net` addresses stop working, so move every device over the same day. Without `domain`,
+Traefik doesn't run and the Tailscale addresses above are used.
 
-With your own addresses in place, the `downloads` module adds **automatic TV and film downloads**: a request page (Seerr) that the family signs into with their Jellyfin accounts, Sonarr and Radarr
-to find what was asked for, and SABnzbd to download it from a Usenet provider (paid; no VPN needed).
-`sudo obento setup downloads` then connects the apps to each other in one go. Setup:
+### downloads: automatic TV and films
+
+Someone asks for a show or film on a request page (Seerr, which the family signs into with their Jellyfin
+accounts); Sonarr (TV) or Radarr (films) finds it through your indexer, SABnzbd downloads it from your Usenet
+provider (paid; encrypted, nothing uploaded, so no VPN), and it appears in Jellyfin. Addresses: `requests.`,
+`tv.`, `movies.`, `downloads.`, `indexers.`. Put the provider and indexer in `.env` (`USENET_*`,
+`NZB_INDEXER*`), add `downloads` to `MODULES`, then:
+
+```bash
+obento update && obento up
+sudo obento setup downloads    # connects the five apps and Jellyfin to each other; safe to re-run
+```
+
+Step by step, and what the setup does by hand:
 [RUNBOOK: Automatic TV and film downloads](docs/RUNBOOK.md#automatic-tv-and-film-downloads-optional-after-step-6).
+Best switched on after the hard drives are in (step 6): films are 5–15 GB each.
 
 ## Make it yours
 
@@ -177,7 +221,7 @@ drive that hasn't been tested.
 | Apps on the SSD | [3](docs/RUNBOOK.md#3-apps-on-the-ssd-until-the-drives-arrive) | Everything runs from `/srv`; set up accounts, AdGuard, devices. Start the Google Takeout export now: it can take a day or more |
 | Burn-in | [4](docs/RUNBOOK.md#4-drives-arrive--burn-in-3-days) | `burnin.sh` writes and reads every sector of each new drive and compares SMART before and after (~3 days for 18 TB) |
 | Pool | [5](docs/RUNBOOK.md#5-create-the-pool) | `create-pool.sh` builds the ZFS mirror `tank` from two drives that passed burn-in |
-| Move data | [6](docs/RUNBOOK.md#6-move-immich-vaultwarden-and-opencloud-onto-the-pool) | Copy photos, passwords and files to `/tank`, check the copy, point `.env` at the new paths |
+| Move data | [6](docs/RUNBOOK.md#6-move-immich-vaultwarden-opencloud-and-media-onto-the-pool) | Copy photos, passwords and files to `/tank`, check the copy, point `.env` at the new paths |
 | Imports | [7–8](docs/RUNBOOK.md#7-import-google-photos-and-verify) | Google Photos into Immich, checked independently by `verify-takeout.py`; Google Drive into OpenCloud with rclone |
 | Off-site backup | [9](docs/RUNBOOK.md#9-off-site-backup) | `backup.sh --init`, the first upload, a read-back check. Only then cancel the Google subscription |
 
@@ -194,13 +238,15 @@ obento logs -f [app...]
 obento upgrade [app...]   # download newer app versions, restart what changed
 obento signups on|off     # let new Vaultwarden accounts be created, briefly
 obento apps               # list app names;  obento help for everything
+obento modules            # which modules are on
+obento setup <module>     # connect a module's apps to each other (downloads)
 ```
 
 **Making changes.** Edit your copy of the repo (on your computer, then push), and on the server:
 
 ```bash
 obento update             # git pull in ~/obento, then sudo ./install.sh
-obento up                 # if you changed .env or the compose file
+obento up                 # if you changed .env (MODULES too) or a compose file
 ```
 
 Don't run `docker compose` from `~/obento/compose`: it wouldn't see the live settings. Use `obento`.
@@ -212,6 +258,7 @@ Don't run `docker compose` from `~/obento/compose`: it wouldn't see the live set
 | `~/obento` | this repo (source of truth) | **yes**, then re-run `sudo ./install.sh` |
 | `/opt/obento` | installed copy that systemd timers and compose run from (root-owned) | no, overwritten by `install.sh` |
 | `/etc/obento/.env` | live settings and secrets (root only, 600) | no, copied from `~/obento/.env` |
+| `/opt/obento/compose/files`, `/opt/obento/generated/` | which compose files are in use, Traefik's routes: written by `install.sh` from `MODULES` | no |
 
 The scripts run as root from systemd, so they run from a root-owned copy that only root can change, and the
 secrets live where only root can read them. `/opt/obento/compose/.env` links to `/etc/obento/.env`,
@@ -228,7 +275,12 @@ AGENTS.md                  notes for coding agents changing this repo
 install.sh                 bootstrap (idempotent; doesn't touch the hard drives)
 .env.example               every setting and secret; copy to .env
 compose/docker-compose.yml the core apps
-modules/                   the optional parts, one folder each (README.md): domain, opencloud, ups, downloads
+modules/                   the optional parts, one folder each (README.md: what a module holds)
+  core/                    always on: the core apps' addresses and portal tiles
+  domain/                  Traefik, the portal (homepage/: its look)
+  opencloud/               OpenCloud
+  ups/                     NUT config, UPS alerts, the battery gauge's source
+  downloads/               Seerr, Sonarr, Radarr, Prowlarr, SABnzbd; setup.sh connects them
 scripts/
   obento                   manage the apps: obento up|down|stop|restart|status|logs|update|upgrade|modules|setup|...
   modules.sh               which modules are on, their addresses, routes, portal tiles and compose files

@@ -125,7 +125,7 @@ Then, either way:
 
 ```bash
 cd ~/obento
-cp .env.example .env && chmod 600 .env && nano .env   # fill in every "change-me"
+cp .env.example .env && chmod 600 .env && nano .env   # fill in every "change-me"; MODULES picks the optional parts
 sudo ./install.sh
 sudo tailscale up --ssh
 sudo ./install.sh                          # again, now that Tailscale is up: sets up HTTPS for the apps
