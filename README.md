@@ -39,6 +39,7 @@ tailnet's name from the Tailscale admin console, and `home.example.com` stands f
 | `domain` | Your own short addresses for every app, and a portal: one page with every app, whether it's up, and the server's CPU, memory, SSD, free space on the hard drives and UPS battery ([Homepage](https://gethomepage.dev)) | `https://<domain>` |
 | `downloads` | A request page for shows and films, which are then downloaded from Usenet into Jellyfin's library with subtitles (Seerr, Sonarr, Radarr, Prowlarr, SABnzbd, Bazarr); needs `domain` | `https://requests.<domain>` and friends |
 | `pi` | The [pi](https://www.npmjs.com/package/@earendil-works/pi-coding-agent) coding agent on the server (and Node.js 22), using a model server of your own | |
+| `shell` | A nicer terminal on the server: the [Starship](https://starship.rs) prompt with the server's name in red, fuzzy history search (Ctrl-R), `z` to jump to folders, `ls` and `cat` with colours | |
 
 Without `domain`, the HTTPS addresses come from `tailscale serve` and work only inside your tailnet; AdGuard and
 Scrutiny are plain HTTP on the tailnet or home network. With `domain`, every app gets a short HTTPS name instead
@@ -170,6 +171,7 @@ on. Each module is one folder under [modules/](modules/README.md), which also ex
 | `domain` | A domain, deSEC | [Below](#domain-your-own-web-addresses-and-a-portal) |
 | `downloads` | `domain`, a Usenet provider and indexer | [Below](#downloads-automatic-tv-and-films) |
 | `pi` | An OpenAI-compatible model server | Set `PI_URL` and `PI_MODEL` in `.env`; `sudo ./install.sh` writes `~/.pi/agent` for you once |
+| `shell` | | Adds one line to the end of each account's `~/.bashrc`; open a new terminal to see it |
 
 ### domain: your own web addresses and a portal
 
@@ -322,6 +324,7 @@ modules/                   the optional parts, one folder each (README.md: what 
   ups/                     NUT config, UPS alerts, the battery gauge's source
   downloads/               Seerr, Sonarr, Radarr, Prowlarr, SABnzbd, Bazarr; setup.sh connects them
   pi/                      the pi coding agent and Node.js
+  shell/                   the shell prompt (starship.toml) and tools (bashrc)
 scripts/
   obento                   manage the apps: obento up|down|stop|restart|status|logs|update|upgrade|modules|setup|...
   modules.sh               which modules are on, their addresses, routes, portal tiles and compose files

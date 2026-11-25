@@ -1,0 +1,51 @@
+# The prompt for the shell module. The server's name comes first, in red, so a terminal on the server never
+# passes for one on your own computer; then the folder, git, how long the last command took, and ❯ (red when
+# it failed). No special font needed.
+add_newline = true
+command_timeout = 200
+format = "$username$hostname$directory$git_branch$git_status$cmd_duration$line_break$character"
+
+[username]
+format = "[$user]($style)@"
+style_user = "bold yellow"
+style_root = "bold red"
+show_always = false   # only when it isn't your login account (root, after sudo -i)
+
+[hostname]
+ssh_only = false
+format = "[$hostname]($style) "
+style = "bold red"
+
+[directory]
+truncation_length = 3
+truncation_symbol = "…/"
+style = "bold cyan"
+repo_root_style = "bold cyan"
+repo_root_format = "[$repo_root]($repo_root_style)[$path]($style)[$read_only]($read_only_style) "
+
+[git_branch]
+format = "[$branch]($style) "
+style = "italic cyan"
+
+[git_status]
+format = "[$all_status$ahead_behind]($style)"
+style = "cyan"
+ahead = "⇡${count} "
+behind = "⇣${count} "
+diverged = "⇕ "
+untracked = "? "
+modified = "! "
+staged = "+ "
+conflicted = "= "
+stashed = ""
+renamed = ""
+deleted = ""
+
+[cmd_duration]
+min_time = 3000
+format = "[took $duration]($style) "
+style = "dimmed"
+
+[character]
+success_symbol = "[❯](bold cyan)"
+error_symbol = "[❯](bold red)"
