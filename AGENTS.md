@@ -47,7 +47,7 @@ live settings.
 ## Secrets
 
 Never print, commit or paste into chat: anything from `.env` (`NTFY_TOPIC`, `NTFY_TOKEN`, `NTFY_EMAIL`,
-`DESEC_TOKEN`, `USENET_PASSWORD`, `NZB_INDEXER_API_KEY`, B2 keys, `RESTIC_PASSWORD`, app passwords), OpenCloud's generated secrets in
+`DESEC_TOKEN`, `USENET_PASSWORD`, `NZB_INDEXER_API_KEY`, `OPENSUBTITLES_PASSWORD`, B2 keys, `RESTIC_PASSWORD`, app passwords), OpenCloud's generated secrets in
 `/srv/opencloud/config`, or private keys. Redact when showing config (`sed` the value out). `.env.example`
 holds placeholders only. The ntfy topic is effectively a password: anyone who knows it can read alerts.
 
@@ -81,7 +81,7 @@ Without `APPS_DOMAIN`, `install.sh` publishes apps through `tailscale serve`
 (`tamago.<tailnet>.ts.net` on 443/8443/8920/9200). With it (the author's setup), Traefik answers
 `photos.` / `passwords.` / `files.` / `media.` / `adblock.` / `drives.` `<APPS_DOMAIN>` and the portal at
 `<APPS_DOMAIN>`, and Tailscale serves nothing. With the `downloads` module too: `requests.` (Seerr), `tv.`
-(Sonarr), `movies.` (Radarr), `downloads.` (SABnzbd), `indexers.` (Prowlarr).
+(Sonarr), `movies.` (Radarr), `downloads.` (SABnzbd), `indexers.` (Prowlarr), `subtitles.` (Bazarr).
 
 | Port (host) | What |
 |---|---|
@@ -92,6 +92,7 @@ Without `APPS_DOMAIN`, `install.sh` publishes apps through `tailscale serve`
 | 3010 | portal (127.0.0.1 only) |
 | 3011 | UPS battery for the portal, `modules/ups/ups-status.py` (127.0.0.1 only) |
 | 5055 | Seerr (127.0.0.1 only) |
+| 6767 | Bazarr (127.0.0.1 only) |
 | 7878 | Radarr (127.0.0.1 only) |
 | 8080 | Scrutiny |
 | 8085 | SABnzbd (127.0.0.1 only; 8080 inside its container) |

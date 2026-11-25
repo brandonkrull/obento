@@ -4,11 +4,12 @@
 #   Jellyfin  Shows and Movies libraries, an API key for Sonarr and Radarr
 #   Sonarr    /data/Shows, SABnzbd, tell Jellyfin about imports, login      (Radarr: the same for films)
 #   Prowlarr  your indexer, handed to Sonarr and Radarr, login
+#   Bazarr    Sonarr, Radarr, subtitle languages and sources, login
 #   Seerr     first-time setup with your Jellyfin admin, both libraries, Sonarr and Radarr
 # Safe to re-run: every step checks first and leaves what's already set up alone.
 #
 # Usage: sudo obento setup downloads   (after 'obento up' with downloads in MODULES)
-# Reads USENET_* and NZB_INDEXER* from .env; asks for logins only when a step needs them, and keeps none.
+# Reads USENET_*, NZB_INDEXER*, SUBTITLE_LANGUAGES and OPENSUBTITLES_* from .env; asks for logins only when a step needs them, and keeps none.
 source "$(dirname "$0")/../../scripts/lib.sh"
 source "$(dirname "$0")/../../scripts/modules.sh"
 [[ -n "${OBENTO_TEST:-}" ]] || require_root
@@ -22,7 +23,7 @@ fail() { warn "$*"; FAILED=1; }
 
 # api <app> <method> <path> [json body]: calls an app on its localhost port and prints the reply. On an
 # error it prints the app's own explanation and fails.
-declare -A PORT=([sabnzbd]=8085 [prowlarr]=9696 [sonarr]=8989 [radarr]=7878 [seerr]=5055 [jellyfin]=8096)
+declare -A PORT=([sabnzbd]=8085 [prowlarr]=9696 [sonarr]=8989 [radarr]=7878 [seerr]=5055 [jellyfin]=8096 [bazarr]=6767)
 declare -A KEY=()
 api() {
   local app="$1" method="$2" path="$3" body="${4:-}" hdr=()
@@ -249,6 +250,79 @@ setup_prowlarr() {
   done
 }
 
+# ------------------------------------------------------------------------------------------------ Bazarr
+# bazarr_save <name=value>...: saves settings the way Bazarr's own settings page does (a form; a name given twice
+# is a list).
+bazarr_save() {
+  local args=() kv
+  for kv in "$@"; do args+=(--data-urlencode "$kv"); done
+  curl -fsS -m 120 -o /dev/null -H "X-API-KEY: ${KEY[bazarr]}" "${args[@]}" http://127.0.0.1:6767/api/system/settings
+}
+
+setup_bazarr() {
+  local settings app lang langs=() items="" id=0 providers=()
+  SUBTITLE_LANGUAGES="${SUBTITLE_LANGUAGES:-en}"
+  log "Bazarr: Sonarr, Radarr, subtitles"
+  wait_for bazarr /
+  for _ in {1..30}; do
+    KEY[bazarr]="$(sed -nE '/^auth:/,/^[a-z]/s/^  apikey: (.+)$/\1/p' "$SSD/bazarr/config/config.yaml" 2>/dev/null)"
+    [[ -n "${KEY[bazarr]}" ]] && break
+    sleep 2
+  done
+  [[ -n "${KEY[bazarr]}" ]] || die "Bazarr hasn't written its API key yet; try again in a minute."
+  settings="$(api bazarr GET /api/system/settings)" || { fail "  Bazarr didn't answer"; return 0; }
+
+  if [[ "$(jq -r .auth.type <<<"$settings")" != form ]]; then
+    app_login
+    bazarr_save settings-auth-type=form "settings-auth-username=$APP_USER" "settings-auth-password=$APP_PASS" \
+      && log "  login set"
+  fi
+
+  # Subtitle languages: one profile, used for every show and film Bazarr learns about.
+  if api bazarr GET /api/system/languages/profiles | jq -e 'length > 0' >/dev/null; then
+    log "  subtitle languages already set"
+  else
+    for lang in ${SUBTITLE_LANGUAGES//,/ }; do
+      langs+=("languages-enabled=$lang")
+      items+="${items:+,}$(jq -cn --arg l "$lang" --argjson i $((++id)) \
+        '{id: $i, language: $l, hi: "False", forced: "False", audio_exclude: "False", audio_only_include: "False"}')"
+    done
+    if bazarr_save "${langs[@]}" "languages-profiles=$(jq -cn --argjson items "[$items]" \
+        '[{profileId: 1, name: "Family", cutoff: null, items: $items, mustContain: [], mustNotContain: [], originalFormat: false}]')" \
+        settings-general-serie_default_enabled=true settings-general-serie_default_profile=1 \
+        settings-general-movie_default_enabled=true settings-general-movie_default_profile=1; then
+      log "  subtitle languages: $SUBTITLE_LANGUAGES"
+    else
+      fail "  couldn't set subtitle languages (Bazarr: Settings > Languages)"
+    fi
+  fi
+
+  # Where subtitles come from: Podnapisi needs no account; OpenSubtitles.com (the biggest) needs a free one.
+  if jq -e '.general.enabled_providers | length > 0' <<<"$settings" >/dev/null; then
+    log "  subtitle sources already set"
+  else
+    providers=(settings-general-enabled_providers=podnapisi)
+    if [[ -n "${OPENSUBTITLES_USERNAME:-}" ]]; then
+      providers+=(settings-general-enabled_providers=opensubtitlescom
+        "settings-opensubtitlescom-username=$OPENSUBTITLES_USERNAME"
+        "settings-opensubtitlescom-password=${OPENSUBTITLES_PASSWORD:-}")
+    fi
+    bazarr_save "${providers[@]}" && log "  subtitle sources: podnapisi${OPENSUBTITLES_USERNAME:+, opensubtitlescom}"
+  fi
+
+  # Sonarr and Radarr last: connecting them starts Bazarr's first sync, which uses the languages above.
+  for app in sonarr radarr; do
+    if [[ "$(jq -r ".general.use_$app" <<<"$settings")" == true ]]; then
+      log "  ${app^} already connected"
+    elif bazarr_save "settings-general-use_$app=true" "settings-$app-ip=$app" "settings-$app-port=${PORT[$app]}" \
+        "settings-$app-apikey=${KEY[$app]}" "settings-$app-base_url=/" settings-$app-ssl=false; then
+      log "  ${app^} connected"
+    else
+      fail "  couldn't connect Bazarr to $app (Bazarr: Settings > ${app^})"
+    fi
+  done
+}
+
 # -------------------------------------------------------------------------------------------- Jellyfin
 JF_KEY=""
 jellyfin_api_key() {  # one key, named obento-downloads, shared by Sonarr and Radarr
@@ -337,6 +411,7 @@ setup_sabnzbd
 setup_arr sonarr /data/Shows tvCategory tv
 setup_arr radarr /data/Movies movieCategory movies
 setup_prowlarr
+setup_bazarr
 setup_seerr
 
 if (( FAILED )); then

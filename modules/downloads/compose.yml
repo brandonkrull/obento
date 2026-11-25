@@ -56,6 +56,19 @@ services:
       - "127.0.0.1:7878:7878"
     restart: always
 
+  # Bazarr fetches subtitles for what Sonarr and Radarr have, in the languages of SUBTITLE_LANGUAGES. It sees the
+  # media folder at /data like they do, so their paths need no translating.
+  bazarr:
+    container_name: bazarr
+    image: lscr.io/linuxserver/bazarr:latest
+    environment: *arr-env
+    volumes:
+      - ${SSD_DATA}/bazarr:/config
+      - ${MEDIA_LOCATION:-/srv/media}:/data
+    ports:
+      - "127.0.0.1:6767:6767"
+    restart: always
+
   seerr:
     container_name: seerr
     image: ghcr.io/seerr-team/seerr:latest   # the merged Overseerr/Jellyseerr; runs as UID 1000

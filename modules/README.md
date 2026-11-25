@@ -9,7 +9,7 @@ The optional parts of the setup, one folder each. `MODULES` in `.env` says which
 | `domain` | Your own web addresses (`photos.<APPS_DOMAIN>`, ...) through Traefik, and the portal at `<APPS_DOMAIN>` | `APPS_DOMAIN`, `DESEC_TOKEN` |
 | `opencloud` | Files synced across devices (OpenCloud, a Google Drive replacement) | |
 | `ups` | A UPS on USB: clean shutdown on low battery, power alerts, the portal's battery gauge | |
-| `downloads` | Automatic TV and film downloads: Seerr, Sonarr, Radarr, Prowlarr, SABnzbd (Usenet) | `domain` |
+| `downloads` | Automatic TV and film downloads: Seerr, Sonarr, Radarr, Prowlarr, SABnzbd (Usenet), and subtitles with Bazarr | `domain` |
 | `pi` | The pi coding agent on the server, with Node.js 22, using your own model server | `PI_URL`, `PI_MODEL` |
 
 Without `MODULES` in `.env`, the setup from before modules applies: `opencloud`, `ups` and `pi`, plus `domain` and

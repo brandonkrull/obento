@@ -25,3 +25,8 @@
         href: https://@indexers@.{{HOMEPAGE_VAR_DOMAIN}}
         description: Prowlarr
         siteMonitor: http://127.0.0.1:9696
+    - Subtitles:
+        icon: bazarr.png
+        href: https://@subtitles@.{{HOMEPAGE_VAR_DOMAIN}}
+        description: Bazarr
+        siteMonitor: http://127.0.0.1:6767

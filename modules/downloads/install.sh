@@ -1,8 +1,8 @@
 # shellcheck shell=bash
 # Module downloads: run by install.sh (helpers from install.sh and scripts/lib.sh; MODULE_DIR is this folder).
 log "Download apps: after 'obento up', 'sudo obento setup downloads' connects them (RUNBOOK)"
-# Seerr, Sonarr, Radarr, Prowlarr and SABnzbd run as 1000:1000 (see compose.yml).
-install -d -m 755 -o 1000 -g 1000 "$SSD_DATA"/{sabnzbd,prowlarr,sonarr,radarr,seerr,downloads} \
+# Seerr, Sonarr, Radarr, Prowlarr, SABnzbd and Bazarr run as 1000:1000 (see compose.yml).
+install -d -m 755 -o 1000 -g 1000 "$SSD_DATA"/{sabnzbd,prowlarr,sonarr,radarr,seerr,bazarr,downloads} \
   "$SSD_DATA/downloads/incomplete" "$MEDIA_DIR/Downloads"
 # SABnzbd refuses requests for names it doesn't know (its own container name is how Sonarr and Radarr
 # reach it), and from addresses it doesn't consider local: through Traefik it sees the visitor's Tailscale

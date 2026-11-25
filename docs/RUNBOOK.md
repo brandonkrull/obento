@@ -459,8 +459,8 @@ Keep Google Drive as it is until step 9 (off-site backup) has finished and been 
 
 ## Automatic TV and film downloads (optional, after step 6)
 
-Someone asks for a show or film on a request page, and it appears in Jellyfin by itself. Five apps work
-together, each at its own address (the own-domain setup above is required):
+Someone asks for a show or film on a request page, and it appears in Jellyfin by itself, with subtitles. Six
+apps work together, each at its own address (the own-domain setup above is required):
 
 | App | What it does | Address |
 |---|---|---|
@@ -469,6 +469,7 @@ together, each at its own address (the own-domain setup above is required):
 | Radarr | The same for films, into `Movies` | `https://movies.home.example.com` |
 | Prowlarr | Keeps the indexer accounts (where releases are found) and hands them to Sonarr and Radarr | `https://indexers.home.example.com` |
 | SABnzbd | Downloads from your Usenet provider | `https://downloads.home.example.com` |
+| Bazarr | Fetches subtitles for what Sonarr and Radarr have, in your languages | `https://subtitles.home.example.com` |
 
 Turn it on after step 6, so downloads land on the pool rather than the SSD. You need two paid accounts: a
 **Usenet provider** (the server you download from) and at least one **indexer** (the search that tells
@@ -484,12 +485,14 @@ Unfinished downloads stay on the SSD (`/srv/downloads/incomplete`).
 1. In `~/obento/.env`: add `downloads` to `MODULES` (with `domain`), your Usenet provider (`USENET_HOST`,
    `USENET_USERNAME`, `USENET_PASSWORD`, and `USENET_PORT`/`USENET_CONNECTIONS` if they differ) and your indexer
    (`NZB_INDEXER` as Prowlarr names it, e.g. `NZBgeek`, and `NZB_INDEXER_API_KEY` from your account page on the
-   indexer's site). Put values with spaces or symbols in single quotes.
+   indexer's site). For subtitles: `SUBTITLE_LANGUAGES` (two-letter codes, e.g. `en,es`; English if unset) and,
+   optionally, a free [OpenSubtitles.com](https://www.opensubtitles.com) account (`OPENSUBTITLES_USERNAME`,
+   `OPENSUBTITLES_PASSWORD`). Put values with spaces or symbols in single quotes.
 2. `obento update && obento up && obento restart traefik portal`
-3. `sudo obento setup downloads`. It asks for a username and password for Sonarr, Radarr, Prowlarr and SABnzbd
+3. `sudo obento setup downloads`. It asks for a username and password for Sonarr, Radarr, Prowlarr, SABnzbd and Bazarr
    (choose them now and save them in Vaultwarden) and for your Jellyfin admin login, keeps none of them, and
    does every step below. It skips what's already set up, so run it again after fixing anything it reports.
-4. Check with step 9 below.
+4. Check with step 10 below.
 
 **By hand**, or to see what the script does:
 
@@ -521,11 +524,16 @@ Unfinished downloads stay on the SSD (`/srv/downloads/incomplete`).
    (`sonarr`, `8989`, root `/data/Shows`) and Radarr (`radarr`, `7878`, root `/data/Movies`) as the default
    servers. **Users → Import Jellyfin users**, and give family members the **Request** and **Auto-approve**
    permissions if their requests should start without you.
-9. **Check**: request a film in Seerr (a show asks for whole seasons). It should appear in SABnzbd's queue,
+9. **Bazarr** (`subtitles.`): **Settings → General → Security**: Forms login. **Settings → Languages**: add a
+   profile with your languages and make it the default for series and movies. **Settings → Providers**: add
+   Podnapisi and, with a free account, OpenSubtitles.com. **Settings → Sonarr** (`sonarr`, `8989`, Sonarr's API
+   key) and **Settings → Radarr** (`radarr`, `7878`). No path mappings: Bazarr sees the media folder as `/data`
+   like Sonarr and Radarr. Subtitles are saved next to each video, and Jellyfin picks them up.
+10. **Check**: request a film in Seerr (a show asks for whole seasons). It should appear in SABnzbd's queue,
    then in Radarr as imported, then in Jellyfin within a minute (if not, check the Connect entry in Radarr:
    **Test**).
 
-Settings live in `/srv/{seerr,sonarr,radarr,prowlarr,sabnzbd}` on the SSD; they aren't in the off-site
+Settings live in `/srv/{seerr,sonarr,radarr,prowlarr,sabnzbd,bazarr}` on the SSD; they aren't in the off-site
 backup, but setting them up again takes the steps above.
 
 ## Routine (automatic)

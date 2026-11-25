@@ -37,7 +37,7 @@ tailnet's name from the Tailscale admin console, and `home.example.com` stands f
 | `opencloud` | Files synced across devices ([OpenCloud](https://opencloud.eu), a Google Drive replacement) | `https://tamago.<tailnet>.ts.net:9200`, or `https://files.<domain>` |
 | `ups` | Clean shutdown when a USB-connected UPS runs low, and power alerts | |
 | `domain` | Your own short addresses for every app, and a portal: one page with every app, whether it's up, and the server's CPU, memory, disk and UPS battery ([Homepage](https://gethomepage.dev)) | `https://<domain>` |
-| `downloads` | A request page for shows and films, which are then downloaded from Usenet into Jellyfin's library (Seerr, Sonarr, Radarr, Prowlarr, SABnzbd); needs `domain` | `https://requests.<domain>` and friends |
+| `downloads` | A request page for shows and films, which are then downloaded from Usenet into Jellyfin's library with subtitles (Seerr, Sonarr, Radarr, Prowlarr, SABnzbd, Bazarr); needs `domain` | `https://requests.<domain>` and friends |
 | `pi` | The [pi](https://www.npmjs.com/package/@earendil-works/pi-coding-agent) coding agent on the server (and Node.js 22), using a model server of your own | |
 
 Without `domain`, the HTTPS addresses come from `tailscale serve` and work only inside your tailnet; AdGuard and
@@ -207,13 +207,14 @@ and `obento update && obento up`. Step by step, including moving each device ove
 
 Someone asks for a show or film on a request page (Seerr, which the family signs into with their Jellyfin
 accounts); Sonarr (TV) or Radarr (films) finds it through your indexer, SABnzbd downloads it from your Usenet
-provider (encrypted, nothing uploaded, so no VPN), and it appears in Jellyfin. Addresses: `requests.`, `tv.`,
-`movies.`, `downloads.`, `indexers.`. Put the provider and indexer in `.env` (`USENET_*`, `NZB_INDEXER*`), add
-`downloads` to `MODULES`, then:
+provider (encrypted, nothing uploaded, so no VPN), and it appears in Jellyfin. Bazarr then fetches subtitles
+in your languages. Addresses: `requests.`, `tv.`, `movies.`, `downloads.`, `indexers.`, `subtitles.`. Put the
+provider and indexer in `.env` (`USENET_*`, `NZB_INDEXER*`), optionally `SUBTITLE_LANGUAGES` and a free
+OpenSubtitles.com login (`OPENSUBTITLES_*`), add `downloads` to `MODULES`, then:
 
 ```bash
 obento update && obento up
-sudo obento setup downloads    # connects the five apps and Jellyfin to each other; safe to re-run
+sudo obento setup downloads    # connects the six apps and Jellyfin to each other; safe to re-run
 ```
 
 Step by step, and what the setup does by hand:
@@ -319,7 +320,7 @@ modules/                   the optional parts, one folder each (README.md: what 
   domain/                  Traefik, the portal (homepage/: its look)
   opencloud/               OpenCloud
   ups/                     NUT config, UPS alerts, the battery gauge's source
-  downloads/               Seerr, Sonarr, Radarr, Prowlarr, SABnzbd; setup.sh connects them
+  downloads/               Seerr, Sonarr, Radarr, Prowlarr, SABnzbd, Bazarr; setup.sh connects them
   pi/                      the pi coding agent and Node.js
 scripts/
   obento                   manage the apps: obento up|down|stop|restart|status|logs|update|upgrade|modules|setup|...
