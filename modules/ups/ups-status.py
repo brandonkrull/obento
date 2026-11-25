@@ -2,7 +2,7 @@
 """
 The UPS battery for the portal's Battery tile, as JSON on http://127.0.0.1:3011/ups.json.
 
-Runs as obento-ups-status.service. Each request asks NUT (upsc) for the first UPS it knows, so it
+Runs as obento-ups-status.service (module ups, with the domain module). Each request asks NUT (upsc) for the first UPS it knows, so it
 reads the same values that decide the low-battery shutdown. Read-only: it never sends commands to
 the UPS.
 

@@ -8,11 +8,12 @@ usage() {
   cat <<'EOF'
 Usage: obento <command> [app...]
 
-Start, stop and check the home server's apps (Immich, Vaultwarden, OpenCloud, AdGuard, Jellyfin, Scrutiny).
-Apps are the service names in docker-compose.yml; leave them out to act on all of them.
+Start, stop and check the home server's apps: the core ones (Immich, Vaultwarden, Jellyfin, AdGuard,
+Scrutiny) and those of the modules that are on. Apps are the names 'obento apps' lists; leave them out to act
+on all of them.
 
 Commands:
-  up [app...]           start (or apply changes to) apps
+  up [app...]           start (or apply changes to) apps; without apps, also removes those of modules turned off
   down                  stop and remove all apps (data is kept)
   stop [app...]         stop apps without removing them
   restart [app...]      restart apps
@@ -22,7 +23,8 @@ Commands:
   upgrade [app...]      download newer app versions (images), then restart what changed
   signups on|off        let new Vaultwarden accounts be created (off again after 'off' or any 'obento up')
   apps                  list app names
-  setup-downloads       connect the download apps to each other (RUNBOOK; needs downloads in COMPOSE_PROFILES)
+  modules               list the modules and which are on (MODULES in .env)
+  setup <module>        connect a module's apps to each other (downloads; RUNBOOK)
   help                  show this help
 
 Runs docker compose with sudo from /opt/obento/compose, so it uses the live settings in
@@ -32,10 +34,24 @@ EOF
 
 compose() {
   [[ -f "$COMPOSE_DIR/docker-compose.yml" ]] || { echo "obento: $COMPOSE_DIR not installed; run 'sudo ./install.sh' in ~/obento" >&2; exit 1; }
-  local sudo=()
+  local sudo=() files=() f
   [[ $EUID -eq 0 ]] || sudo=(sudo)
+  # The core compose file, each module's that is on, and the override, as install.sh listed them.
+  if [[ -f "$COMPOSE_DIR/files" ]]; then
+    while read -r f; do files+=(-f "$f"); done < "$COMPOSE_DIR/files"
+  fi
   # env passes settings through sudo; compose prefers them over .env.
-  (cd "$COMPOSE_DIR" && "${sudo[@]}" env "${COMPOSE_ENV[@]}" docker compose "$@")
+  (cd "$COMPOSE_DIR" && "${sudo[@]}" env "${COMPOSE_ENV[@]}" docker compose "${files[@]}" "$@")
+}
+
+list_modules() {
+  local dir m on
+  for dir in /opt/obento/modules/*/; do
+    m="$(basename "$dir")"
+    on="   "; grep -qx "$m" /opt/obento/modules.on 2>/dev/null && on="on "
+    printf '%s %-10s %s\n' "$on" "$m" "$(sed -nE 's/^DESCRIPTION="(.*)"$/\1/p' "$dir/module.conf")"
+  done
+  echo "Change MODULES in ~/obento/.env, then 'obento update && obento up'."
 }
 COMPOSE_ENV=()
 
@@ -54,7 +70,7 @@ update_setup() {
 cmd="${1:-help}"
 (( $# )) && shift
 case "$cmd" in
-  up)               compose up -d "$@" ;;
+  up)               if (( $# )); then compose up -d "$@"; else compose up -d --remove-orphans; fi ;;
   down)             (( $# == 0 )) || { echo "obento: 'down' acts on all apps; use 'stop <app>' for one" >&2; exit 2; }
                     compose down ;;
   stop|restart)     compose "$cmd" "$@" ;;
@@ -64,8 +80,12 @@ case "$cmd" in
   update)           update_setup ;;
   upgrade)          compose pull "$@" && compose up -d "$@" ;;
   apps)             compose config --services ;;
-  setup-downloads)  sudo=(); [[ $EUID -eq 0 ]] || sudo=(sudo)
-                    exec "${sudo[@]}" /opt/obento/scripts/setup-downloads.sh ;;
+  modules)          list_modules ;;
+  setup|setup-downloads)
+                    m="${1:-}"; [[ $cmd == setup-downloads ]] && m=downloads
+                    [[ -f "/opt/obento/modules/$m/setup.sh" ]] || { echo "obento: no setup for module '$m'" >&2; exit 2; }
+                    sudo=(); [[ $EUID -eq 0 ]] || sudo=(sudo)
+                    exec "${sudo[@]}" "/opt/obento/modules/$m/setup.sh" ;;
   signups)          case "${1:-}" in
                       on)  COMPOSE_ENV=(VAULTWARDEN_SIGNUPS_ALLOWED=true); compose up -d vaultwarden
                            echo "Vaultwarden sign-ups are ON. Create the accounts, then run: obento signups off" ;;

@@ -9,6 +9,10 @@ require_root
 install -d -m 700 /etc/obento
 install -m 600 "$REPO_DIR/.env" /etc/obento/.env
 load_env
+source "$REPO_DIR/scripts/modules.sh"
+modules_check
+[[ -n "${MODULES+set}" ]] || warn "MODULES isn't in .env; using the settings from before modules: $(modules_on | tr '\n' ' ')(see .env.example)."
+log "Modules: $(modules_on | tr '\n' ' ')"
 
 # install_conf <mode> <group> <src> <dest>: copy only when the content differs, so the file's
 # modification time says when its settings last changed.
@@ -52,7 +56,7 @@ fi
 log "Base packages"
 apt-get update
 DEBIAN_FRONTEND=noninteractive apt-get install -y \
-  zfsutils-linux smartmontools sanoid restic nut-client nut-server \
+  zfsutils-linux smartmontools sanoid restic \
   curl jq unattended-upgrades ufw lm-sensors e2fsprogs python3 ca-certificates \
   libnss-resolve neovim rclone
 # Installing libnss-resolve restarts systemd-resolved; wait for DNS before downloading anything else.
@@ -104,10 +108,12 @@ restart_if_stale docker /etc/docker/daemon.json
 
 log "Install repo to /opt/obento (systemd units run scripts from here)"
 install -d /opt/obento
-cp -a "$REPO_DIR/scripts" "$REPO_DIR/config" "$REPO_DIR/compose" "$REPO_DIR/docs" /opt/obento/
+# Start clean, so files removed or moved in the repo don't linger here (compose/ keeps .env and the override).
+rm -rf /opt/obento/scripts /opt/obento/config /opt/obento/docs /opt/obento/modules
+cp -a "$REPO_DIR/scripts" "$REPO_DIR/config" "$REPO_DIR/compose" "$REPO_DIR/docs" "$REPO_DIR/modules" /opt/obento/
 # Root runs these from systemd, so only root may change them (cp -a keeps the repo owner).
 chown -R root:root /opt/obento
-chmod 755 /opt/obento/scripts/*
+chmod 755 /opt/obento/scripts/* /opt/obento/modules/*/*.sh /opt/obento/modules/*/*.py 2>/dev/null || true
 # 'obento update' pulls and re-installs from here.
 printf '%s\n' "$REPO_DIR" > /opt/obento/repo-path
 ln -sf /opt/obento/scripts/notify /usr/local/bin/obento-notify
@@ -130,17 +136,6 @@ if [[ -f $ZEDRC ]]; then
     echo "ZED_NOTIFY_VERBOSE=1"
   } >> "$ZEDRC"
   systemctl restart zfs-zed
-fi
-
-log "UPS over USB (config/nut) -> clean shutdown on low battery"
-for f in ups.conf nut.conf upsd.users upsmon.conf; do
-  install_conf 640 nut "$REPO_DIR/config/nut/$f" "/etc/nut/$f"
-done
-if systemctl enable --now nut-server nut-monitor 2>/dev/null; then
-  restart_if_stale nut-server /etc/nut/ups.conf /etc/nut/nut.conf /etc/nut/upsd.users
-  restart_if_stale nut-monitor /etc/nut/nut.conf /etc/nut/upsmon.conf
-else
-  warn "NUT will start once the UPS USB cable is connected."
 fi
 
 log "Timers: backup, capacity check, scrub, drive health report, weekly cleanup"
@@ -173,28 +168,15 @@ MEDIA_DIR="${MEDIA_LOCATION:-$SSD_DATA/media}"
 MEDIA_USER="${SUDO_USER:-root}"
 install -d -m 755 "$MEDIA_DIR"
 install -d -m 755 -o "$MEDIA_USER" -g "$(id -gn "$MEDIA_USER")" "$MEDIA_DIR"/{Movies,Shows,Music}
-if [[ ",${COMPOSE_PROFILES:-}," == *,downloads,* ]]; then
-  [[ -n "${APPS_DOMAIN:-}" ]] || warn "COMPOSE_PROFILES has downloads but APPS_DOMAIN isn't set: those apps are only reachable through Traefik."
-  log "Download apps: after 'obento up', 'sudo obento setup-downloads' connects them (RUNBOOK)"
-  # Seerr, Sonarr, Radarr, Prowlarr and SABnzbd run as 1000:1000 (see compose).
-  install -d -m 755 -o 1000 -g 1000 "$SSD_DATA"/{sabnzbd,prowlarr,sonarr,radarr,seerr,downloads} \
-    "$SSD_DATA/downloads/incomplete" "$MEDIA_DIR/Downloads"
-  # SABnzbd refuses requests for names it doesn't know (its own container name is how Sonarr and Radarr
-  # reach it), and from addresses it doesn't consider local: through Traefik it sees the visitor's Tailscale
-  # address (100.64.0.0/10), so that range is added to the usual private ones. Seeded before its first start;
-  # after that they're in SABnzbd's settings (Config > Special).
-  if [[ ! -f "$SSD_DATA/sabnzbd/sabnzbd.ini" ]]; then
-    printf '[misc]\nhost_whitelist = sabnzbd, downloads.%s\nlocal_ranges = %s\n' "${APPS_DOMAIN:-}" \
-      "127.0.0.0/8, 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 100.64.0.0/10, ::1" > "$SSD_DATA/sabnzbd/sabnzbd.ini"
-    chown 1000:1000 "$SSD_DATA/sabnzbd/sabnzbd.ini"
-    chmod 600 "$SSD_DATA/sabnzbd/sabnzbd.ini"
-  fi
-fi
-# OpenCloud runs as 1000:1000 (see compose); its config holds generated secrets.
-install -d -m 700 -o 1000 -g 1000 "$SSD_DATA/opencloud" "$SSD_DATA/opencloud/config" "${OPENCLOUD_DATA:-$SSD_DATA/opencloud/data}"
-case "${OPENCLOUD_ADMIN_PASSWORD:-}" in
-  ""|change-me*) warn "Set OPENCLOUD_ADMIN_PASSWORD in .env before OpenCloud's first start." ;;
-esac
+
+log "Modules"
+for m in $(modules_on); do
+  [[ -f "$REPO_DIR/modules/$m/install.sh" ]] || continue
+  # shellcheck disable=SC2034  # used by the module's install.sh
+  MODULE_DIR="/opt/obento/modules/$m"
+  # shellcheck disable=SC1090
+  source "$REPO_DIR/modules/$m/install.sh"
+done
 
 log "Scrutiny alerts (-> ntfy)"
 SCRUTINY_CONF="$SSD_DATA/scrutiny/config/scrutiny.yaml"
@@ -255,52 +237,26 @@ else
   done
 fi
 
-log "Web addresses for the apps (Tailscale serve, or Traefik with APPS_DOMAIN)"
+log "Web addresses for the apps (Tailscale serve, or Traefik with the domain module)"
 TS_DOMAIN="$(tailscale status --json 2>/dev/null | jq -r '.CertDomains[0] // empty' || true)"
-if [[ -n "${APPS_DOMAIN:-}" ]]; then
-  [[ -n "${DESEC_TOKEN:-}" ]] || warn "APPS_DOMAIN is set but DESEC_TOKEN isn't: Traefik can't get its certificate."
-  [[ ",${COMPOSE_PROFILES:-}," == *,domain,* ]] || warn "APPS_DOMAIN is set: add COMPOSE_PROFILES=domain to .env so Traefik starts."
-  install -d -m 700 "$SSD_DATA/traefik"
-  # The portal's tiles and look; edits belong in config/homepage (these copies are overwritten).
-  # PORTAL_TITLE and PORTAL_LOGO add your own name and image without putting them in the repo.
-  install -d -m 755 "$SSD_DATA/portal"
-  portal_tmp="$(mktemp -d)"
-  cp "$REPO_DIR"/config/homepage/* "$portal_tmp"/
-  # The Downloads tiles only when those apps run.
-  if [[ ",${COMPOSE_PROFILES:-}," == *,downloads,* ]]; then
-    cat "$portal_tmp/services-downloads.yaml" >> "$portal_tmp/services.yaml"
-    printf '  Downloads:\n    style: row\n    columns: 5\n' >> "$portal_tmp/settings.yaml"
-  fi
-  rm "$portal_tmp/services-downloads.yaml"
-  if [[ -n "${PORTAL_TITLE:-}" ]]; then
-    sed -i "s|^title: .*|title: \"${PORTAL_TITLE//\"/}\"|" "$portal_tmp/settings.yaml"
-  fi
-  if [[ -n "${PORTAL_LOGO:-}" ]]; then
-    printf 'favicon: %s\n' "$PORTAL_LOGO" >> "$portal_tmp/settings.yaml"
-  fi
-  {
-    if [[ -n "${PORTAL_LOGO:-}" ]]; then printf -- '- logo:\n    icon: %s\n' "$PORTAL_LOGO"; fi
-    if [[ -n "${PORTAL_TITLE:-}" ]]; then printf -- '- greeting:\n    text_size: xl\n    text: "%s"\n' "${PORTAL_TITLE//\"/}"; fi
-    cat "$REPO_DIR/config/homepage/widgets.yaml"
-  } > "$portal_tmp/widgets.yaml"
-  for f in "$portal_tmp"/*; do install_conf 644 root "$f" "$SSD_DATA/portal/$(basename "$f")"; done
-  rm -rf "$portal_tmp"
-  # The portal's Battery tile reads the UPS from here (127.0.0.1:3011).
-  systemctl enable --now obento-ups-status.service
-  restart_if_stale obento-ups-status.service /opt/obento/scripts/ups-status.py \
-    /etc/systemd/system/obento-ups-status.service
-  # Traefik answers every app on 443 (config/traefik/dynamic.yml), so the Tailscale port addresses go away.
-  SERVE_PORTS=()
-  SERVE_OFF=(443 8443 8920 9200)
-  OC_URL="https://files.$APPS_DOMAIN" OC_HOST="files.$APPS_DOMAIN" OC_IP=127.0.0.1
-  VW_URL="https://passwords.$APPS_DOMAIN"
+# Every port any module ever publishes through Tailscale serve; the ones not wanted now are turned off.
+ALL_SERVE="$(for m in "$REPO_DIR"/modules/*/; do module_conf "$(basename "$m")" SERVE; printf ' '; done)"
+if module_on domain; then
+  # Traefik answers every app on 443 (routes from each module's HOSTS), so Tailscale serves nothing.
+  read -ra SERVE_PORTS <<<""
+  OC_URL="https://$(host_name files).$APPS_DOMAIN" OC_HOST="$(host_name files).$APPS_DOMAIN" OC_IP=127.0.0.1
+  VW_URL="https://$(host_name passwords).$APPS_DOMAIN"
 else
-  # https port : local app port (Immich, Vaultwarden, Jellyfin, OpenCloud). Vaultwarden needs HTTPS.
-  SERVE_PORTS=(443:2283 8443:8222 8920:8096 9200:9201)
-  SERVE_OFF=()
+  [[ -z "${APPS_DOMAIN:-}" ]] || warn "APPS_DOMAIN is set but the domain module is off: add domain to MODULES to use it."
+  # https port : local app port, from each module's SERVE.
+  read -ra SERVE_PORTS <<<"$(serve_ports)"
   OC_URL="https://$TS_DOMAIN:9200" OC_HOST="$TS_DOMAIN" OC_IP="$(tailscale ip -4 2>/dev/null | head -1 || true)"
   VW_URL=""
 fi
+SERVE_OFF=()
+for m in $ALL_SERVE; do
+  [[ " ${SERVE_PORTS[*]} " == *" $m "* ]] || SERVE_OFF+=("${m%%:*}")
+done
 
 if ! tailscale status >/dev/null 2>&1; then
   warn "Tailscale addresses not set up: run 'sudo tailscale up --ssh', then re-run install.sh."
@@ -319,39 +275,44 @@ else
   done
 fi
 
-if [[ -n "${APPS_DOMAIN:-}" ]]; then
-  log "Immich https://photos.$APPS_DOMAIN  Vaultwarden $VW_URL  OpenCloud $OC_URL"
-  log "Jellyfin https://media.$APPS_DOMAIN  AdGuard https://adblock.$APPS_DOMAIN  Scrutiny https://drives.$APPS_DOMAIN"
-  log "Portal https://$APPS_DOMAIN"
+if module_on domain; then
+  while read -r name app _port _m; do
+    if [[ $name == @ ]]; then log "  $app https://$APPS_DOMAIN"; else log "  $app https://$name.$APPS_DOMAIN"; fi
+  done < <(hosts_table)
 elif [[ -n "$TS_DOMAIN" ]]; then
   log "Immich https://$TS_DOMAIN  Vaultwarden https://$TS_DOMAIN:8443  Jellyfin https://$TS_DOMAIN:8920"
-  log "OpenCloud $OC_URL"
+  module_on opencloud && log "OpenCloud $OC_URL"
 fi
 
-if [[ -n "${APPS_DOMAIN:-}" || -n "$TS_DOMAIN" ]]; then
+if module_on domain || [[ -n "$TS_DOMAIN" ]]; then
   # OpenCloud needs its public address, and must reach it itself to check sign-ins (see compose).
   # App tokens let tools such as rclone sign in without the browser (Google Drive import, RUNBOOK step 8).
   APP_TOKEN_ENV=""
   [[ "${OPENCLOUD_APP_TOKENS:-}" == true ]] && APP_TOKEN_ENV=$'\n      OC_ADD_RUN_SERVICES: auth-app\n      PROXY_ENABLE_APP_AUTH: "true"'
   VW_ENV=""
   [[ -n "$VW_URL" ]] && VW_ENV=$'\n  vaultwarden:\n    environment:\n      DOMAIN: '"$VW_URL"
+  OC_ENV=""
+  module_on opencloud && OC_ENV=$'\n  opencloud:\n    environment:\n      OC_URL: '"$OC_URL$APP_TOKEN_ENV"$'\n    extra_hosts:\n      - "'"$OC_HOST:$OC_IP"'"'
+  [[ -n "$OC_ENV$VW_ENV" ]] || OC_ENV=" {}"
   cat > /opt/obento/compose/docker-compose.override.yml <<EOF
 # Written by install.sh from APPS_DOMAIN or this machine's Tailscale name; don't edit.
-services:
-  opencloud:
-    environment:
-      OC_URL: $OC_URL$APP_TOKEN_ENV
-    extra_hosts:
-      - "$OC_HOST:$OC_IP"$VW_ENV
+services:$OC_ENV$VW_ENV
 EOF
   # OpenCloud writes its web sign-in addresses once; when OC_URL changes, remove them so it writes new ones.
   IDP_CLIENTS="${OPENCLOUD_DATA:-/srv/opencloud/data}/idp/tmp/identifier-registration.yaml"
-  if [[ -f "$IDP_CLIENTS" ]] && ! grep -qF -- "- $OC_URL/" "$IDP_CLIENTS"; then
+  if module_on opencloud && [[ -f "$IDP_CLIENTS" ]] && ! grep -qF -- "- $OC_URL/" "$IDP_CLIENTS"; then
     log "OpenCloud address changed to $OC_URL: everyone signs in to OpenCloud again once"
     rm -f "$IDP_CLIENTS"
   fi
   rm -f /etc/obento/opencloud.env
 fi
+
+# The compose files obento uses: the core apps, each module's, then the override above.
+{
+  compose_files /opt/obento/compose | sed "s#^$REPO_DIR/modules#/opt/obento/modules#"
+  [[ -f /opt/obento/compose/docker-compose.override.yml ]] && echo /opt/obento/compose/docker-compose.override.yml
+} > /opt/obento/compose/files
+modules_on > /opt/obento/modules.on
 
 obento-notify default "Bootstrap complete" "install.sh finished on $(hostname)"
 log "Done. Next: 'obento up' to start the apps (see docs/RUNBOOK.md)."

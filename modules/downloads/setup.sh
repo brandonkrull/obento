@@ -7,15 +7,16 @@
 #   Seerr     first-time setup with your Jellyfin admin, both libraries, Sonarr and Radarr
 # Safe to re-run: every step checks first and leaves what's already set up alone.
 #
-# Usage: sudo obento setup-downloads   (after 'obento up' with COMPOSE_PROFILES including downloads)
+# Usage: sudo obento setup downloads   (after 'obento up' with downloads in MODULES)
 # Reads USENET_* and NZB_INDEXER* from .env; asks for logins only when a step needs them, and keeps none.
-source "$(dirname "$0")/lib.sh"
+source "$(dirname "$0")/../../scripts/lib.sh"
+source "$(dirname "$0")/../../scripts/modules.sh"
 [[ -n "${OBENTO_TEST:-}" ]] || require_root
 load_env
 
-[[ ",${COMPOSE_PROFILES:-}," == *,downloads,* ]] || die "Add downloads to COMPOSE_PROFILES in .env first (RUNBOOK)."
+module_on downloads || die "Add downloads to MODULES in .env first, then 'obento update && obento up' (RUNBOOK)."
 SSD="${SSD_DATA:-/srv}"
-JELLYFIN_URL="https://media.${APPS_DOMAIN:?APPS_DOMAIN is not set}"
+JELLYFIN_URL="https://$(host_name media).${APPS_DOMAIN:?APPS_DOMAIN is not set}"
 FAILED=0
 fail() { warn "$*"; FAILED=1; }
 
@@ -307,7 +308,7 @@ setup_seerr() {
       '{hostname: $h, port: $p, apiKey: $k, useSsl: false, baseUrl: ""}')")" || { fail "  Seerr can't reach $app"; continue; }
     profile="$(jq -c 'first(.profiles[] | select(.name == "HD-1080p")) // .profiles[0]' <<<"$test")"
     body="$(jq -n --arg app "$app" --argjson port "${PORT[$app]}" --arg key "${KEY[$app]}" --arg root "$root" --argjson pr "$profile" \
-      --arg ext "https://$([[ $app == sonarr ]] && echo tv || echo movies).$APPS_DOMAIN" \
+      --arg ext "https://$(host_name "$([[ $app == sonarr ]] && echo tv || echo movies)").$APPS_DOMAIN" \
       '{name: ($app | ascii_upcase[0:1] + $app[1:]), hostname: $app, port: $port, apiKey: $key, useSsl: false, baseUrl: "",
         activeProfileId: $pr.id, activeProfileName: $pr.name, activeDirectory: $root, is4k: false, isDefault: true,
         externalUrl: $ext, syncEnabled: false, preventSearch: false}
@@ -328,7 +329,7 @@ setup_prowlarr
 setup_seerr
 
 if (( FAILED )); then
-  warn "Done, with the problems above; fix them and run 'sudo obento setup-downloads' again."
+  warn "Done, with the problems above; fix them and run 'sudo obento setup downloads' again."
   exit 1
 fi
-log "Done. Try it: request something at https://requests.$APPS_DOMAIN"
+log "Done. Try it: request something at https://$(host_name requests).$APPS_DOMAIN"

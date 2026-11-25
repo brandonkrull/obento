@@ -1,27 +1,27 @@
-# Added to services.yaml by install.sh when COMPOSE_PROFILES includes downloads.
+# The Downloads row on the portal (domain module).
 - Downloads:
     - Requests:
         icon: jellyseerr.png
-        href: https://requests.{{HOMEPAGE_VAR_DOMAIN}}
+        href: https://@requests@.{{HOMEPAGE_VAR_DOMAIN}}
         description: Seerr, ask for a show or film
         siteMonitor: http://127.0.0.1:5055
     - TV shows:
         icon: sonarr.png
-        href: https://tv.{{HOMEPAGE_VAR_DOMAIN}}
+        href: https://@tv@.{{HOMEPAGE_VAR_DOMAIN}}
         description: Sonarr
         siteMonitor: http://127.0.0.1:8989
     - Movies:
         icon: radarr.png
-        href: https://movies.{{HOMEPAGE_VAR_DOMAIN}}
+        href: https://@movies@.{{HOMEPAGE_VAR_DOMAIN}}
         description: Radarr
         siteMonitor: http://127.0.0.1:7878
     - Downloader:
         icon: sabnzbd.png
-        href: https://downloads.{{HOMEPAGE_VAR_DOMAIN}}
+        href: https://@downloads@.{{HOMEPAGE_VAR_DOMAIN}}
         description: SABnzbd, Usenet
         siteMonitor: http://127.0.0.1:8085
     - Indexers:
         icon: prowlarr.png
-        href: https://indexers.{{HOMEPAGE_VAR_DOMAIN}}
+        href: https://@indexers@.{{HOMEPAGE_VAR_DOMAIN}}
         description: Prowlarr
         siteMonitor: http://127.0.0.1:9696

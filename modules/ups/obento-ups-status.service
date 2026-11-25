@@ -3,7 +3,7 @@ Description=UPS battery status for the portal (127.0.0.1:3011)
 After=network.target nut-server.service
 
 [Service]
-ExecStart=/usr/bin/python3 -I /opt/obento/scripts/ups-status.py
+ExecStart=/usr/bin/python3 -I /opt/obento/modules/ups/ups-status.py
 Restart=on-failure
 DynamicUser=yes
 NoNewPrivileges=yes

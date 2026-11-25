@@ -1,0 +1,7 @@
+# The Files tile on the portal (domain module).
+- Family:
+    - Files:
+        icon: mdi-cloud-outline
+        href: https://@files@.{{HOMEPAGE_VAR_DOMAIN}}
+        description: OpenCloud, files on every device
+        siteMonitor: http://127.0.0.1:9201

@@ -1,0 +1,18 @@
+# The battery gauge in the portal's top row (domain module, custom.js) reads this hidden tile.
+- Server:
+    # Not shown as a tile: custom.js draws it as the battery gauge in the top row. The values come from
+    # ups-status.py (obento-ups-status.service), which reads the UPS through NUT.
+    - Battery:
+        widget:
+          type: customapi
+          url: http://127.0.0.1:3011/ups.json
+          refreshInterval: 30000
+          mappings:
+            - field: power
+              label: Power
+            - field: charge
+              label: Charge
+              format: percent
+            - field: runtime
+              label: Time left
+              format: duration

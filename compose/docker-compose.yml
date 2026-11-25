@@ -1,4 +1,5 @@
-# Family server stack. Installed to /opt/obento/compose, where .env links to /etc/obento/.env.
+# Family server stack: the core apps. Modules (modules/*/compose.yml) add more when they're on in MODULES.
+# Installed to /opt/obento/compose, where .env links to /etc/obento/.env.
 # Manage it with 'obento' (see 'obento help'), not by running docker compose from the repo.
 # Remote access is via Tailscale (no ports exposed to the internet). See docs/RUNBOOK.md.
 name: obento
@@ -104,105 +105,6 @@ services:
       - "8096:8096"
     restart: always
 
-  # ---------------------------------------------------------------- Automatic TV and film downloads (optional)
-  # Seerr takes requests, Sonarr (TV) and Radarr (films) find them through Prowlarr's indexers, SABnzbd
-  # downloads from Usenet, and finished downloads move into Shows/Movies for Jellyfin. Only starts with
-  # 'downloads' in COMPOSE_PROFILES, and needs APPS_DOMAIN: the apps listen on localhost only and are reached
-  # through Traefik (RUNBOOK "Automatic TV and film downloads").
-  # Everything sees MEDIA_LOCATION as /data, so a finished download in /data/Downloads moves into
-  # /data/Shows or /data/Movies instantly instead of being copied. Runs as 1000:1000, like OpenCloud.
-  sabnzbd:
-    container_name: sabnzbd
-    image: lscr.io/linuxserver/sabnzbd:latest
-    profiles: [downloads]
-    environment: &arr-env
-      PUID: "1000"
-      PGID: "1000"
-      UMASK: "002"
-      TZ: ${TZ}
-    volumes:
-      - ${SSD_DATA}/sabnzbd:/config
-      # Unfinished downloads stay on the SSD, so pool snapshots don't keep their pieces.
-      - ${SSD_DATA}/downloads/incomplete:/incomplete
-      - ${MEDIA_LOCATION:-/srv/media}:/data
-    ports:
-      - "127.0.0.1:8085:8080"
-    restart: always
-
-  prowlarr:
-    container_name: prowlarr
-    image: lscr.io/linuxserver/prowlarr:latest
-    profiles: [downloads]
-    environment: *arr-env
-    volumes:
-      - ${SSD_DATA}/prowlarr:/config
-    ports:
-      - "127.0.0.1:9696:9696"
-    restart: always
-
-  sonarr:
-    container_name: sonarr
-    image: lscr.io/linuxserver/sonarr:latest
-    profiles: [downloads]
-    environment: *arr-env
-    volumes:
-      - ${SSD_DATA}/sonarr:/config
-      - ${MEDIA_LOCATION:-/srv/media}:/data
-    ports:
-      - "127.0.0.1:8989:8989"
-    restart: always
-
-  radarr:
-    container_name: radarr
-    image: lscr.io/linuxserver/radarr:latest
-    profiles: [downloads]
-    environment: *arr-env
-    volumes:
-      - ${SSD_DATA}/radarr:/config
-      - ${MEDIA_LOCATION:-/srv/media}:/data
-    ports:
-      - "127.0.0.1:7878:7878"
-    restart: always
-
-  seerr:
-    container_name: seerr
-    image: ghcr.io/seerr-team/seerr:latest   # the merged Overseerr/Jellyseerr; runs as UID 1000
-    profiles: [downloads]
-    init: true
-    environment:
-      TZ: ${TZ}
-      LOG_LEVEL: info
-    volumes:
-      - ${SSD_DATA}/seerr:/app/config
-    ports:
-      - "127.0.0.1:5055:5055"
-    restart: always
-
-  # ---------------------------------------------------------------- Files (Google Drive replacement)
-  opencloud:
-    container_name: opencloud
-    image: opencloudeu/opencloud:4      # production (stable) line; 'obento upgrade' pulls 4.x fixes
-    user: "1000:1000"                   # owns ${SSD_DATA}/opencloud and OPENCLOUD_DATA (install.sh)
-    entrypoint: ["/bin/sh", "-c"]
-    # init writes the config with random secrets on first start and fails harmlessly afterwards
-    command: ["opencloud init || true; opencloud server"]
-    # Host networking: OpenCloud checks sign-ins by fetching its own address (https://files.<APPS_DOMAIN>, or
-    # https://tamago.<tailnet>.ts.net:9200), and Tailscale serve only answers this machine or the tailnet, not
-    # Docker's network. install.sh writes OC_URL and how to reach it into docker-compose.override.yml.
-    network_mode: host
-    environment:
-      PROXY_HTTP_ADDR: "127.0.0.1:9201"   # only reachable through Traefik or Tailscale serve
-      PROXY_TLS: "false"                # they handle HTTPS
-      OC_INSECURE: "false"
-      IDM_ADMIN_PASSWORD: ${OPENCLOUD_ADMIN_PASSWORD:-}   # first start only; change it later in OpenCloud
-      IDM_CREATE_DEMO_USERS: "false"
-      OC_LOG_LEVEL: warn
-      TZ: ${TZ}
-    volumes:
-      - ${SSD_DATA}/opencloud/config:/etc/opencloud
-      - ${OPENCLOUD_DATA:-/srv/opencloud/data}:/var/lib/opencloud
-    restart: always
-
   # ---------------------------------------------------------------- Drive health dashboard
   scrutiny:
     container_name: scrutiny
@@ -217,54 +119,6 @@ services:
       - /dev/nvme0:/dev/nvme0
     ports:
       - "8080:8080"
-    restart: always
-
-  # ---------------------------------------------------------------- Your own web addresses (optional)
-  # photos.<APPS_DOMAIN> and friends, with one Let's Encrypt wildcard certificate proved at deSEC, which hosts APPS_DOMAIN
-  # (RUNBOOK "Your own web addresses"). Only starts with COMPOSE_PROFILES=domain in .env.
-  traefik:
-    container_name: traefik
-    image: traefik:v3
-    profiles: [domain]
-    network_mode: host                  # listens on 80/443 of every interface; reaches apps on localhost
-    command:
-      - --providers.file.filename=/etc/traefik/dynamic.yml
-      - --entrypoints.web.address=:80
-      - --entrypoints.web.http.redirections.entrypoint.to=websecure
-      - --entrypoints.web.http.redirections.entrypoint.scheme=https
-      - --entrypoints.websecure.address=:443
-      - --entrypoints.websecure.http.tls.certresolver=le
-      - --entrypoints.websecure.http.tls.domains[0].main=*.${APPS_DOMAIN:-}
-      - --entrypoints.websecure.http.tls.domains[0].sans=${APPS_DOMAIN:-}   # the portal itself
-      # Traefik 3 stops reading a request after 60 s, which cuts off big Immich uploads.
-      - --entrypoints.websecure.transport.respondingtimeouts.readtimeout=0s
-      - --certificatesresolvers.le.acme.storage=/data/acme.json
-      - --certificatesresolvers.le.acme.dnschallenge.provider=desec
-      - --certificatesresolvers.le.acme.dnschallenge.resolvers=1.1.1.1:53,9.9.9.9:53
-      # deSEC takes about a minute to copy a record to all its servers, and Let's Encrypt checks from several
-      # places; without the wait, one of them can find no proof yet.
-      - --certificatesresolvers.le.acme.dnschallenge.propagation.delaybeforechecks=120s
-    environment:
-      DESEC_TOKEN: ${DESEC_TOKEN:-}
-    volumes:
-      - ../config/traefik/dynamic.yml:/etc/traefik/dynamic.yml:ro
-      - ${SSD_DATA}/traefik:/data
-    restart: always
-
-  # The portal at https://<APPS_DOMAIN>: a tile per app with a status light (Homepage, gethomepage.dev).
-  # Its tiles are config/homepage/*.yaml, copied to ${SSD_DATA}/portal by install.sh.
-  portal:
-    container_name: portal
-    image: ghcr.io/gethomepage/homepage:latest
-    profiles: [domain]
-    network_mode: host                  # checks the apps on their localhost ports
-    environment:
-      HOSTNAME: 127.0.0.1               # only Traefik reaches it
-      PORT: "3010"
-      HOMEPAGE_ALLOWED_HOSTS: ${APPS_DOMAIN:-}
-      HOMEPAGE_VAR_DOMAIN: ${APPS_DOMAIN:-}
-    volumes:
-      - ${SSD_DATA}/portal:/app/config
     restart: always
 
 volumes:

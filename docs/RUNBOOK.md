@@ -261,8 +261,8 @@ Tailscale address, so they only work on devices signed into your tailnet.
 The `tamago.<tailnet>.ts.net` addresses stop working once you switch, so plan to update every device the same
 day (step 5).
 
-The names and the apps they lead to are in `config/traefik/dynamic.yml`; the portal's tiles are in
-`config/homepage/services.yaml`.
+The names come from `HOSTS` in each module's `module.conf` (`HOST_<NAME>` in `.env` renames one); the
+portal's tiles from each module's `portal.yaml` ([modules/README.md](../modules/README.md)).
 
 How it works: Traefik (the `traefik` app) answers those names on port 443 with one Let's Encrypt certificate
 for `*.home.example.com`. To get it, the server proves it owns the name through **deSEC**, a free DNS host with
@@ -288,7 +288,7 @@ Below, `home.example.com` stands for whatever you choose; it becomes `APPS_DOMAI
    ```bash
    APPS_DOMAIN=home.example.com
    DESEC_TOKEN=<the deSEC token>
-   COMPOSE_PROFILES=domain
+   MODULES=domain,opencloud,ups      # domain added to the modules you use
    ```
 
    ```bash
@@ -475,19 +475,19 @@ Unfinished downloads stay on the SSD (`/srv/downloads/incomplete`).
 
 **The quick way** (a few minutes):
 
-1. In `~/obento/.env`: `COMPOSE_PROFILES=domain,downloads`, your Usenet provider (`USENET_HOST`,
+1. In `~/obento/.env`: add `downloads` to `MODULES` (with `domain`), your Usenet provider (`USENET_HOST`,
    `USENET_USERNAME`, `USENET_PASSWORD`, and `USENET_PORT`/`USENET_CONNECTIONS` if they differ) and your indexer
    (`NZB_INDEXER` as Prowlarr names it, e.g. `NZBgeek`, and `NZB_INDEXER_API_KEY` from your account page on the
    indexer's site). Put values with spaces or symbols in single quotes.
 2. `obento update && obento up && obento restart traefik portal`
-3. `sudo obento setup-downloads`. It asks for a username and password for Sonarr, Radarr, Prowlarr and SABnzbd
+3. `sudo obento setup downloads`. It asks for a username and password for Sonarr, Radarr, Prowlarr and SABnzbd
    (choose them now and save them in Vaultwarden) and for your Jellyfin admin login, keeps none of them, and
    does every step below. It skips what's already set up, so run it again after fixing anything it reports.
 4. Check with step 9 below.
 
 **By hand**, or to see what the script does:
 
-1. **Switch it on**: in `~/obento/.env`, `COMPOSE_PROFILES=domain,downloads`, then
+1. **Switch it on**: in `~/obento/.env`, add `downloads` to `MODULES`, then
    `obento update && obento up && obento restart traefik portal`.
 2. **Sign-ins first.** Sonarr, Radarr and Prowlarr ask for a username and password on first visit: choose
    **Forms** and **Enabled** (not "Disabled for local addresses": through Traefik every visitor looks

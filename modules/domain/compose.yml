@@ -1,0 +1,50 @@
+# Own web addresses and the portal (module domain; see modules/README.md). obento adds this file to compose/docker-compose.yml when the
+# module is in MODULES, so paths here are relative to compose/ and settings come from the same .env.
+services:
+  # ---------------------------------------------------------------- Your own web addresses (optional)
+  # photos.<APPS_DOMAIN> and friends, with one Let's Encrypt wildcard certificate proved at deSEC, which hosts APPS_DOMAIN
+  # (RUNBOOK "Your own web addresses").
+  traefik:
+    container_name: traefik
+    image: traefik:v3
+    network_mode: host                  # listens on 80/443 of every interface; reaches apps on localhost
+    command:
+      # Which address goes to which app: written by install.sh from each module's HOSTS (scripts/modules.sh).
+      - --providers.file.directory=/etc/traefik/routes
+      - --entrypoints.web.address=:80
+      - --entrypoints.web.http.redirections.entrypoint.to=websecure
+      - --entrypoints.web.http.redirections.entrypoint.scheme=https
+      - --entrypoints.websecure.address=:443
+      - --entrypoints.websecure.http.tls.certresolver=le
+      - --entrypoints.websecure.http.tls.domains[0].main=*.${APPS_DOMAIN:-}
+      - --entrypoints.websecure.http.tls.domains[0].sans=${APPS_DOMAIN:-}   # the portal itself
+      # Traefik 3 stops reading a request after 60 s, which cuts off big Immich uploads.
+      - --entrypoints.websecure.transport.respondingtimeouts.readtimeout=0s
+      - --certificatesresolvers.le.acme.storage=/data/acme.json
+      - --certificatesresolvers.le.acme.dnschallenge.provider=desec
+      - --certificatesresolvers.le.acme.dnschallenge.resolvers=1.1.1.1:53,9.9.9.9:53
+      # deSEC takes about a minute to copy a record to all its servers, and Let's Encrypt checks from several
+      # places; without the wait, one of them can find no proof yet.
+      - --certificatesresolvers.le.acme.dnschallenge.propagation.delaybeforechecks=120s
+    environment:
+      DESEC_TOKEN: ${DESEC_TOKEN:-}
+    volumes:
+      - ../generated/routes:/etc/traefik/routes:ro
+      - ${SSD_DATA}/traefik:/data
+    restart: always
+
+  # The portal at https://<APPS_DOMAIN>: a tile per app with a status light (Homepage, gethomepage.dev).
+  # Its look is modules/domain/homepage, its tiles each module's portal.yaml; install.sh writes them to
+  # ${SSD_DATA}/portal.
+  portal:
+    container_name: portal
+    image: ghcr.io/gethomepage/homepage:latest
+    network_mode: host                  # checks the apps on their localhost ports
+    environment:
+      HOSTNAME: 127.0.0.1               # only Traefik reaches it
+      PORT: "3010"
+      HOMEPAGE_ALLOWED_HOSTS: ${APPS_DOMAIN:-}
+      HOMEPAGE_VAR_DOMAIN: ${APPS_DOMAIN:-}
+    volumes:
+      - ${SSD_DATA}/portal:/app/config
+    restart: always

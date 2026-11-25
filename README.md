@@ -117,10 +117,10 @@ they only work on devices in your tailnet.
 
 What it adds:
 
-- **Traefik**, one more app, which answers every name on port 443 and sends it to the right app
-  (`config/traefik/dynamic.yml`).
+- **Traefik**, one more app, which answers every name on port 443 and sends it to the right app (the names
+  come from each module's `HOSTS`; `HOST_<NAME>` in `.env` renames one).
 - **A portal** at `https://home.example.com` with a tile per app and a status light, plus the UPS battery
-  (`config/homepage/`; `PORTAL_TITLE` and `PORTAL_LOGO` in `.env` add your own name and image).
+  (`modules/domain/homepage/`; `PORTAL_TITLE` and `PORTAL_LOGO` in `.env` add your own name and image).
 - **One Let's Encrypt certificate** for `home.example.com` and `*.home.example.com`, renewed automatically. To get it, the server
   proves it owns the name through **[deSEC](https://desec.io)**, a free DNS host with an API.
 
@@ -132,7 +132,7 @@ records stay where they are. Then three settings in `.env`:
 ```bash
 APPS_DOMAIN=home.example.com
 DESEC_TOKEN=<your deSEC token>
-COMPOSE_PROFILES=domain
+MODULES=domain,opencloud,ups       # add domain to the modules you use
 ```
 
 and `sudo ./install.sh && obento up`. Step by step, including moving each device over:
@@ -140,10 +140,9 @@ and `sudo ./install.sh && obento up`. Step by step, including moving each device
 `tamago.<tailnet>.ts.net` addresses stop working, so move every device over the same day. Without these
 settings nothing changes: Traefik doesn't run and the Tailscale addresses above are used.
 
-With your own addresses in place, `COMPOSE_PROFILES=domain,downloads` adds **automatic TV and film
-downloads**: a request page (Seerr) that the family signs into with their Jellyfin accounts, Sonarr and Radarr
+With your own addresses in place, the `downloads` module adds **automatic TV and film downloads**: a request page (Seerr) that the family signs into with their Jellyfin accounts, Sonarr and Radarr
 to find what was asked for, and SABnzbd to download it from a Usenet provider (paid; no VPN needed).
-`sudo obento setup-downloads` then connects the apps to each other in one go. Setup:
+`sudo obento setup downloads` then connects the apps to each other in one go. Setup:
 [RUNBOOK: Automatic TV and film downloads](docs/RUNBOOK.md#automatic-tv-and-film-downloads-optional-after-step-6).
 
 ## Make it yours
@@ -156,8 +155,9 @@ Things written for the author's setup, where to change them, and whether you nee
 | Username `brandon` | `docs/MAC-SETUP.md` (ssh config), RUNBOOK step 1 (`ssh-copy-id`) | Use your own account on the server. |
 | Repo address | RUNBOOK step 2 (deploy key, `git clone`) | Use your fork's address. |
 | Hardware workarounds | RUNBOOK steps 0–1: ASUS BIOS, Realtek RTL8125 Ethernet (needs the HWE kernel), MediaTek MT7922 Wi-Fi power saving, interface names `wlp131s0`/`eno1`, Ultrastar PWDIS/Molex note | Only follow the ones that match your hardware. `install.sh` holds the HWE kernel packages either way. |
-| UPS model (APC BE600M1) | `config/nut/ups.conf` | `usbhid-ups` with `port = auto` covers many USB UPSes; change `desc`, or the driver if yours needs another. No UPS: leave it; `install.sh` warns that NUT will start once a UPS is connected, and nothing else depends on it. |
-| UPS monitor password | `config/nut/upsd.users` and `config/nut/upsmon.conf` (`change-me-local-only`) | Change both to the same value. It's only used on the server itself. |
+| Which optional parts you want | `MODULES` in `.env` ([modules/README.md](modules/README.md)) | `opencloud` (files), `ups`, `domain` (own addresses and the portal), `downloads`. The core apps (Immich, Vaultwarden, Jellyfin, AdGuard, Scrutiny) are always on. |
+| UPS model (APC BE600M1) | `modules/ups/nut/ups.conf` | `usbhid-ups` with `port = auto` covers many USB UPSes; change `desc`, or the driver if yours needs another. No UPS: leave `ups` out of `MODULES`. |
+| UPS monitor password | `modules/ups/nut/upsd.users` and `upsmon.conf` (`change-me-local-only`) | Change both to the same value. It's only used on the server itself. |
 | LAN ranges | `install.sh`, firewall: `ufw allow from 192.168.0.0/16` and `10.0.0.0/8` | Fine for most home routers. If your network uses `172.16.x.x`, add a line for it. |
 | Time zone | `TZ=America/Los_Angeles` in `.env` | Set yours. `install.sh` sets the server's clock to it too, so the timers run at local times. |
 | pi coding agent | `config/pi/` (points at the author's own model server, `spark-e2ca:11437`); the "pi coding agent" block in `install.sh` | A personal extra. `install.sh` always installs Node.js 22 (from NodeSource) and pi, and copies `config/pi/` to `~/.pi/agent/`. Point `config/pi/models.json` at your own OpenAI-compatible server, or remove that block from `install.sh` in your fork. Unused, it does no harm. |
@@ -227,9 +227,11 @@ Drive replacement, restore tests and manual kernel updates are in the
 AGENTS.md                  notes for coding agents changing this repo
 install.sh                 bootstrap (idempotent; doesn't touch the hard drives)
 .env.example               every setting and secret; copy to .env
-compose/docker-compose.yml the apps
+compose/docker-compose.yml the core apps
+modules/                   the optional parts, one folder each (README.md): domain, opencloud, ups, downloads
 scripts/
-  obento                   manage the apps: obento up|down|stop|restart|status|logs|update|signups|apps
+  obento                   manage the apps: obento up|down|stop|restart|status|logs|update|upgrade|modules|setup|...
+  modules.sh               which modules are on, their addresses, routes, portal tiles and compose files
   burnin.sh                SMART + badblocks burn-in for new/recertified drives (DESTRUCTIVE)
   create-pool.sh           ZFS mirror + datasets (refuses drives without a burn-in PASS)
   print-scrutiny-devices.sh  device lines for Scrutiny once the hard drives are in
@@ -239,16 +241,10 @@ scripts/
   check-capacity.sh        pool fill (POOL_WARN_PCT) and pool-health alerts
   health-report.sh         weekly SMART + per-drive latency report
   maintenance.sh           weekly Docker cleanup + "reboot needed" alert
-  ups-notify.sh            UPS events → ntfy
-  ups-status.py            UPS battery for the portal's Battery tile
-  setup-downloads.sh       connects the download apps to each other (obento setup-downloads)
   notify / lib.sh          ntfy alerts and shared helpers used by everything
 config/
-  nut/                     UPS monitoring and low-battery shutdown
   systemd/                 timers: backup, verify, capacity, scrub, health, maintenance
   pi/                      the author's pi coding agent settings (optional)
-  traefik/dynamic.yml      which own-domain address goes to which app (optional, see APPS_DOMAIN)
-  homepage/                the portal's tiles at https://<APPS_DOMAIN> (optional)
   smartd.conf  sanoid.conf  52obento-unattended  docker-daemon.json  sshd-hardening.conf
 docs/
   RUNBOOK.md               step by step: install → apps → burn-in → pool → migrate → imports → backup → ops
