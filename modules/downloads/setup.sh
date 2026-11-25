@@ -60,10 +60,11 @@ ask() {  # ask <var> <prompt> [secret]: prompt once, keep the answer for the res
   printf -v "$1" '%s' "$reply"
 }
 
-# The login for Sonarr, Radarr, Prowlarr and SABnzbd, asked for only if one of them has none yet.
+# app_login <app>: a login for an app that has none yet. Asked once per run, so on a new setup every app gets
+# the same one; apps that already have a login keep theirs.
 app_login() {
-  ask APP_USER "Username for Sonarr, Radarr, Prowlarr and SABnzbd (save it in Vaultwarden)"
-  ask APP_PASS "Password for them" secret
+  ask APP_USER "New username for $1 (and any other app here without a login; save it in Vaultwarden)"
+  ask APP_PASS "Password for it" secret
 }
 
 # Jellyfin admin session, for its libraries and API key and for Seerr's first setup.
@@ -104,7 +105,7 @@ setup_sabnzbd() {
       || { sab "mode=set_config&section=categories&keyword=$cat&dir=" >/dev/null; log "  category $cat added"; }
   done
   if [[ -z "$(jq -r '.config.misc.username' <<<"$cfg")" ]]; then
-    app_login
+    app_login SABnzbd
     sab "mode=set_config&section=misc&keyword=username&value=$(jq -rn --arg v "$APP_USER" '$v|@uri')" >/dev/null
     sab "mode=set_config&section=misc&keyword=password&value=$(jq -rn --arg v "$APP_PASS" '$v|@uri')" >/dev/null
     log "  login set"
@@ -125,7 +126,7 @@ arr_login() {  # arr_login <app> <api version>: Forms login, required for everyo
   local host
   host="$(api "$1" GET "/api/$2/config/host")"
   [[ "$(jq -r .authenticationMethod <<<"$host")" == forms ]] && return 0
-  app_login
+  app_login "${1^}"
   api "$1" PUT "/api/$2/config/host" "$(jq --arg u "$APP_USER" --arg p "$APP_PASS" \
     '.authenticationMethod = "forms" | .authenticationRequired = "enabled" | .username = $u
      | .password = $p | .passwordConfirmation = $p' <<<"$host")" >/dev/null
@@ -273,7 +274,7 @@ setup_bazarr() {
   settings="$(api bazarr GET /api/system/settings)" || { fail "  Bazarr didn't answer"; return 0; }
 
   if [[ "$(jq -r .auth.type <<<"$settings")" != form ]]; then
-    app_login
+    app_login Bazarr
     bazarr_save settings-auth-type=form "settings-auth-username=$APP_USER" "settings-auth-password=$APP_PASS" \
       && log "  login set"
   fi

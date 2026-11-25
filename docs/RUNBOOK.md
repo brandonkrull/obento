@@ -489,8 +489,9 @@ Unfinished downloads stay on the SSD (`/srv/downloads/incomplete`).
    optionally, a free [OpenSubtitles.com](https://www.opensubtitles.com) account (`OPENSUBTITLES_USERNAME`,
    `OPENSUBTITLES_PASSWORD`). Put values with spaces or symbols in single quotes.
 2. `obento update && obento up && obento restart traefik portal`
-3. `sudo obento setup downloads`. It asks for a username and password for Sonarr, Radarr, Prowlarr, SABnzbd and Bazarr
-   (choose them now and save them in Vaultwarden) and for your Jellyfin admin login, keeps none of them, and
+3. `sudo obento setup downloads`. It asks for a username and password for the apps that don't have one yet
+   (on a first run, one login for all of Sonarr, Radarr, Prowlarr, SABnzbd and Bazarr; apps that already have a
+   login keep theirs; save it in Vaultwarden) and for your Jellyfin admin login, keeps none of them, and
    does every step below. It skips what's already set up, so run it again after fixing anything it reports.
 4. Check with step 10 below.
 
