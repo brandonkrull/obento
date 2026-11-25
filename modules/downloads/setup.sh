@@ -166,12 +166,23 @@ setup_arr() {  # setup_arr <sonarr|radarr> <root folder> <SABnzbd category field
     fi
   fi
 
-  if api "$app" GET /api/v3/notification | jq -e 'any(.implementation == "MediaBrowser")' >/dev/null; then
-    log "  Jellyfin updates already on"
+  # Jellyfin sees the media folder as /media, Sonarr and Radarr as /data: without the mapping Jellyfin is told
+  # about paths it doesn't have and ignores them, so new downloads only appear at its next full scan.
+  local existing
+  existing="$(api "$app" GET /api/v3/notification | jq -c 'first(.[] | select(.implementation == "MediaBrowser")) // empty')"
+  if [[ -n "$existing" ]]; then
+    if jq -e '.fields | any(.name == "mapFrom" and .value == "/data/")' <<<"$existing" >/dev/null; then
+      log "  Jellyfin updates already on"
+    elif api "$app" PUT "/api/v3/notification/$(jq .id <<<"$existing")" "$(fill "$existing" 'mapFrom="/data/"' 'mapTo="/media/"')" >/dev/null; then
+      log "  Jellyfin updates: now map /data/ to /media/"
+    else
+      fail "  couldn't set Map Paths in $app (Settings > Connect > Jellyfin: /data/ to /media/)"
+    fi
   else
     jellyfin_api_key
     schema="$(api "$app" GET /api/v3/notification/schema | jq '.[] | select(.implementation == "MediaBrowser")')"
-    item="$(fill "$schema" 'host="jellyfin"' 'port=8096' "apiKey=\"$JF_KEY\"" 'updateLibrary=true')"
+    item="$(fill "$schema" 'host="jellyfin"' 'port=8096' "apiKey=\"$JF_KEY\"" 'updateLibrary=true' \
+      'mapFrom="/data/"' 'mapTo="/media/"')"
     # Every event this notification supports (imports, upgrades, renames, deletes).
     item="$(jq '.name = "Jellyfin" | . as $o | reduce (keys[] | select(startswith("supportsOn"))) as $s
              (.; if $o[$s] then .["on" + ($s | ltrimstr("supportsOn"))] = true else . end)' <<<"$item")"

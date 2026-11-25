@@ -512,7 +512,9 @@ Unfinished downloads stay on the SSD (`/srv/downloads/incomplete`).
    (`http://radarr:7878`). Prowlarr now keeps their indexer lists in step.
 7. **Tell Jellyfin when something arrives**, so it shows up right away instead of at the next library scan:
    in Jellyfin, **Dashboard → API Keys → +** (name it `sonarr-radarr`). In Sonarr and in Radarr, **Settings →
-   Connect → + → Emby / Jellyfin**: host `jellyfin`, port `8096`, the API key, **Update Library** on.
+   Connect → + → Emby / Jellyfin**: host `jellyfin`, port `8096`, the API key, **Update Library** on, and
+   **Map Paths From** `/data/` **To** `/media/` (Jellyfin sees the media folder as `/media`; without this it
+   ignores the update and new films only appear at its next full scan).
 8. **Seerr** (`requests.`): Jellyfin needs its libraries first (**Dashboard → Libraries**: Shows at
    `/media/Shows`, Movies at `/media/Movies`; Jellyfin sees the media folder as `/media`). Then in Seerr choose Jellyfin, server `jellyfin` port `8096` (no SSL), sign in as the Jellyfin
    admin, and set the external URL to `https://media.home.example.com`. Pick the libraries, then add Sonarr
