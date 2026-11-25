@@ -22,6 +22,7 @@ Commands:
   upgrade [app...]      download newer app versions (images), then restart what changed
   signups on|off        let new Vaultwarden accounts be created (off again after 'off' or any 'obento up')
   apps                  list app names
+  setup-downloads       connect the download apps to each other (RUNBOOK; needs downloads in COMPOSE_PROFILES)
   help                  show this help
 
 Runs docker compose with sudo from /opt/obento/compose, so it uses the live settings in
@@ -63,6 +64,8 @@ case "$cmd" in
   update)           update_setup ;;
   upgrade)          compose pull "$@" && compose up -d "$@" ;;
   apps)             compose config --services ;;
+  setup-downloads)  sudo=(); [[ $EUID -eq 0 ]] || sudo=(sudo)
+                    exec "${sudo[@]}" /opt/obento/scripts/setup-downloads.sh ;;
   signups)          case "${1:-}" in
                       on)  COMPOSE_ENV=(VAULTWARDEN_SIGNUPS_ALLOWED=true); compose up -d vaultwarden
                            echo "Vaultwarden sign-ups are ON. Create the accounts, then run: obento signups off" ;;

@@ -175,6 +175,7 @@ install -d -m 755 "$MEDIA_DIR"
 install -d -m 755 -o "$MEDIA_USER" -g "$(id -gn "$MEDIA_USER")" "$MEDIA_DIR"/{Movies,Shows,Music}
 if [[ ",${COMPOSE_PROFILES:-}," == *,downloads,* ]]; then
   [[ -n "${APPS_DOMAIN:-}" ]] || warn "COMPOSE_PROFILES has downloads but APPS_DOMAIN isn't set: those apps are only reachable through Traefik."
+  log "Download apps: after 'obento up', 'sudo obento setup-downloads' connects them (RUNBOOK)"
   # Seerr, Sonarr, Radarr, Prowlarr and SABnzbd run as 1000:1000 (see compose).
   install -d -m 755 -o 1000 -g 1000 "$SSD_DATA"/{sabnzbd,prowlarr,sonarr,radarr,seerr,downloads} \
     "$SSD_DATA/downloads/incomplete" "$MEDIA_DIR/Downloads"

@@ -143,7 +143,8 @@ settings nothing changes: Traefik doesn't run and the Tailscale addresses above 
 With your own addresses in place, `COMPOSE_PROFILES=domain,downloads` adds **automatic TV and film
 downloads**: a request page (Seerr) that the family signs into with their Jellyfin accounts, Sonarr and Radarr
 to find what was asked for, and SABnzbd to download it from a Usenet provider (paid; no VPN needed).
-Setup: [RUNBOOK: Automatic TV and film downloads](docs/RUNBOOK.md#automatic-tv-and-film-downloads-optional-after-step-6).
+`sudo obento setup-downloads` then connects the apps to each other in one go. Setup:
+[RUNBOOK: Automatic TV and film downloads](docs/RUNBOOK.md#automatic-tv-and-film-downloads-optional-after-step-6).
 
 ## Make it yours
 
@@ -240,6 +241,7 @@ scripts/
   maintenance.sh           weekly Docker cleanup + "reboot needed" alert
   ups-notify.sh            UPS events → ntfy
   ups-status.py            UPS battery for the portal's Battery tile
+  setup-downloads.sh       connects the download apps to each other (obento setup-downloads)
   notify / lib.sh          ntfy alerts and shared helpers used by everything
 config/
   nut/                     UPS monitoring and low-battery shutdown

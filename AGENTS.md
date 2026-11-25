@@ -46,7 +46,7 @@ live settings.
 ## Secrets
 
 Never print, commit or paste into chat: anything from `.env` (`NTFY_TOPIC`, `NTFY_TOKEN`, `NTFY_EMAIL`,
-`DESEC_TOKEN`, B2 keys, `RESTIC_PASSWORD`, app passwords), OpenCloud's generated secrets in
+`DESEC_TOKEN`, `USENET_PASSWORD`, `NZB_INDEXER_API_KEY`, B2 keys, `RESTIC_PASSWORD`, app passwords), OpenCloud's generated secrets in
 `/srv/opencloud/config`, or private keys. Redact when showing config (`sed` the value out). `.env.example`
 holds placeholders only. The ntfy topic is effectively a password: anyone who knows it can read alerts.
 
