@@ -310,6 +310,14 @@ Below, `home.example.com` stands for whatever you choose; it becomes `APPS_DOMAI
 
 The certificate renews itself. If the server's Tailscale IP ever changes, update both A records at deSEC.
 
+**Optional: the same addresses for devices without Tailscale at home** (a smart TV, a guest's phone). If the
+home network's DNS goes through AdGuard (step 3, "Ad blocking for the whole network"), have AdGuard answer
+with the server's home address: **Filters → DNS rewrites**, add `*.home.example.com` and `home.example.com`,
+both → the server's LAN IP (`ip -4 addr` on the server; reserve it in your router so it doesn't change).
+Traefik answers on that address too, with the same certificate. Away from home nothing changes: public DNS
+still gives the Tailscale IP. Check from a computer at home: `dig +short media.home.example.com` prints the
+LAN IP.
+
 ## 4. Drives arrive → burn-in (~3 days)
 
 ```bash
