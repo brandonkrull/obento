@@ -12,7 +12,7 @@
     --portal-fg: #ededed;
     --portal-fg-rgb: 237, 237, 237;
   }
-  /* A black drawing on white becomes a white drawing on black, as on onigiricapital.com; the same for the
+  /* A black drawing on white becomes a white drawing on black; the same for the
      app icons, so black ones stay visible. */
   .information-widget-logo img {
     filter: invert(1);

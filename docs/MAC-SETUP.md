@@ -55,7 +55,7 @@ mkdir -p ~/.ssh && chmod 700 ~/.ssh
 cat >> ~/.ssh/config <<'EOF'
 Host tamago
   HostName tamago
-  User brandon
+  User <you>
 EOF
 chmod 600 ~/.ssh/config
 ssh tamago

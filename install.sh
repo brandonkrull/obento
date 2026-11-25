@@ -95,7 +95,7 @@ ufw allow from 192.168.0.0/16
 ufw allow from 10.0.0.0/8
 ufw --force enable
 
-log "Updates automatic (Ubuntu, Docker, Tailscale, Node.js); kernel updates held (lesson: kernel regressions)"
+log "Updates automatic (Ubuntu, Docker, Tailscale, Node.js for pi); kernel updates held (lesson: kernel regressions)"
 install -m 644 "$REPO_DIR/config/52obento-unattended" /etc/apt/apt.conf.d/52obento-unattended
 apt-mark hold linux-image-generic linux-headers-generic linux-generic \
   linux-image-generic-hwe-24.04 linux-headers-generic-hwe-24.04 linux-generic-hwe-24.04 >/dev/null 2>&1 || true
@@ -154,8 +154,8 @@ log "Free port 53 for AdGuard (disable systemd-resolved stub listener)"
 install -d /etc/systemd/resolved.conf.d
 printf '[Resolve]\nDNSStubListener=no\nDNS=1.1.1.1 9.9.9.9\n' > /etc/systemd/resolved.conf.d/adguard.conf
 ln -sf /run/systemd/resolve/resolv.conf /etc/resolv.conf
-# libnss-resolve keeps name lookups going through systemd-resolved without the stub, so Tailscale
-# names (e.g. spark-e2ca) still resolve.
+# libnss-resolve keeps name lookups going through systemd-resolved without the stub, so the names of other
+# machines on the tailnet still resolve.
 systemctl restart systemd-resolved
 for _ in {1..30}; do getent hosts deb.nodesource.com >/dev/null && break; sleep 1; done
 
@@ -209,33 +209,6 @@ log "Snapshots config (applies once the pool exists)"
 install -m 644 "$REPO_DIR/config/sanoid.conf" /etc/sanoid/sanoid.conf 2>/dev/null || {
   install -d /etc/sanoid; install -m 644 "$REPO_DIR/config/sanoid.conf" /etc/sanoid/sanoid.conf; }
 systemctl enable --now sanoid.timer 2>/dev/null || true
-
-log "pi coding agent (uses qwen36-moe on spark-e2ca over Tailscale)"
-# pi needs Node >= 22.19; Ubuntu 24.04 ships 18, so use NodeSource's 22.x repo.
-if ! node -e 'const [a,b]=process.versions.node.split(".").map(Number); process.exit(a>22||(a==22&&b>=19)?0:1)' 2>/dev/null; then
-  install -m 0755 -d /etc/apt/keyrings
-  curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor --yes -o /etc/apt/keyrings/nodesource.gpg
-  echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_22.x nodistro main" \
-    > /etc/apt/sources.list.d/nodesource.list
-  apt-get update
-  apt-get install -y nodejs
-fi
-PI_VERSION=1.0.0
-[[ "$(pi --version 2>/dev/null)" == "$PI_VERSION" ]] || npm install -g "@earendil-works/pi-coding-agent@$PI_VERSION"
-PI_USER="${SUDO_USER:-}"
-if [[ -z "$PI_USER" || "$PI_USER" == root ]]; then
-  warn "pi config not installed: run install.sh with sudo from your own account."
-else
-  PI_DIR="$(getent passwd "$PI_USER" | cut -d: -f6)/.pi/agent"
-  install -d -m 700 -o "$PI_USER" -g "$(id -gn "$PI_USER")" "$(dirname "$PI_DIR")" "$PI_DIR"
-  for f in models.json settings.json; do
-    if [[ -f "$PI_DIR/$f" ]] && ! cmp -s "$REPO_DIR/config/pi/$f" "$PI_DIR/$f"; then
-      warn "Kept your existing $PI_DIR/$f (differs from config/pi/$f)."
-      continue
-    fi
-    install -m 600 -o "$PI_USER" -g "$(id -gn "$PI_USER")" "$REPO_DIR/config/pi/$f" "$PI_DIR/$f"
-  done
-fi
 
 log "Web addresses for the apps (Tailscale serve, or Traefik with the domain module)"
 TS_DOMAIN="$(tailscale status --json 2>/dev/null | jq -r '.CertDomains[0] // empty' || true)"

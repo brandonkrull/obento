@@ -5,13 +5,13 @@ MODULES_DIR="${MODULES_DIR:-$REPO_DIR/modules}"
 
 # The modules that are on: core always, then what MODULES in .env lists (in alphabetical order, so the portal
 # and the app list come out the same however MODULES is written). Without MODULES, the setup from before
-# modules existed: OpenCloud and the UPS, plus domain and downloads if COMPOSE_PROFILES named them.
+# modules existed: OpenCloud, the UPS and pi, plus domain and downloads if COMPOSE_PROFILES named them.
 modules_on() {
   local list m on=()
   if [[ -n "${MODULES+set}" ]]; then
     list="${MODULES//,/ }"
   else
-    list="opencloud ups ${COMPOSE_PROFILES//,/ }"
+    list="opencloud pi ups ${COMPOSE_PROFILES//,/ }"
   fi
   for m in $list; do
     [[ $m == core ]] && continue

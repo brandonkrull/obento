@@ -38,6 +38,7 @@ tailnet's name from the Tailscale admin console, and `home.example.com` stands f
 | `ups` | Clean shutdown when a USB-connected UPS runs low, and power alerts | |
 | `domain` | Your own short addresses for every app, and a portal: one page with every app, whether it's up, and the server's CPU, memory, disk and UPS battery ([Homepage](https://gethomepage.dev)) | `https://<domain>` |
 | `downloads` | A request page for shows and films, which are then downloaded from Usenet into Jellyfin's library (Seerr, Sonarr, Radarr, Prowlarr, SABnzbd); needs `domain` | `https://requests.<domain>` and friends |
+| `pi` | The [pi](https://www.npmjs.com/package/@earendil-works/pi-coding-agent) coding agent on the server (and Node.js 22), using a model server of your own | |
 
 Without `domain`, the HTTPS addresses come from `tailscale serve` and work only inside your tailnet; AdGuard and
 Scrutiny are plain HTTP on the tailnet or home network. With `domain`, every app gets a short HTTPS name instead
@@ -99,8 +100,8 @@ you already use for other things. It runs as root and:
   a few tools, plus what each module needs (NUT for `ups`).
 - **Locks down access**: SSH by key only (once a key is present), and a firewall (ufw) that allows only the
   home network (`192.168.0.0/16`, `10.0.0.0/8`) and the tailnet.
-- **Turns on automatic updates** (Ubuntu, Docker, Tailscale, and Node.js for pi) and holds the kernel
-  packages, so kernels are only upgraded by hand.
+- **Turns on automatic updates** (Ubuntu, Docker, Tailscale) and holds the kernel packages, so kernels are
+  only upgraded by hand.
 - **Frees port 53** for AdGuard by turning off systemd-resolved's local DNS listener, and sets the server's time
   zone from `TZ`.
 - **Configures Docker** to keep apps running while Docker itself updates, and caps container log sizes.
@@ -109,8 +110,6 @@ you already use for other things. It runs as root and:
 - **Adds systemd timers and alerts**: drive health (smartd), ZFS events (ZED), scrubs, capacity checks, a
   weekly report and cleanup, backups once you set them up, and clean app shutdown.
 - **Publishes the apps on your tailnet** with `tailscale serve`, or through Traefik with the `domain` module.
-- **Installs the author's coding agent** ([pi](https://www.npmjs.com/package/@earendil-works/pi-coding-agent))
-  and Node.js 22. You don't need it; see [Make it yours](#make-it-yours).
 
 It never touches the hard drives: wiping and pooling them are separate scripts you run yourself. It's safe to
 run again; it only changes what differs.
@@ -157,7 +156,7 @@ hard drives arrive, continue with [the later stages](#the-setup-in-stages).
 The core apps are always there; everything else is a module you switch on in `.env`:
 
 ```bash
-MODULES=domain,opencloud,ups,downloads    # the author's setup
+MODULES=domain,opencloud,ups,downloads,pi    # the author's setup
 ```
 
 then `obento update && obento up`. Taking one out and doing the same removes its apps, addresses and portal
@@ -170,6 +169,7 @@ on. Each module is one folder under [modules/](modules/README.md), which also ex
 | `ups` | A UPS on USB | Check your model in `modules/ups/nut/ups.conf` ([Make it yours](#make-it-yours)) |
 | `domain` | A domain, deSEC | [Below](#domain-your-own-web-addresses-and-a-portal) |
 | `downloads` | `domain`, a Usenet provider and indexer | [Below](#downloads-automatic-tv-and-films) |
+| `pi` | An OpenAI-compatible model server | Set `PI_URL` and `PI_MODEL` in `.env`; `sudo ./install.sh` writes `~/.pi/agent` for you once |
 
 ### domain: your own web addresses and a portal
 
@@ -228,8 +228,7 @@ Settings that came from the author's build, where they are, and whether you need
 | What | Where | What to do |
 |---|---|---|
 | Hostname `tamago` | Chosen in the Ubuntu installer | Pick your own. `install.sh` finds the real Tailscale name itself; only the docs say `tamago`. |
-| Username `brandon` | `docs/MAC-SETUP.md` (ssh config), RUNBOOK step 1 (`ssh-copy-id`) | Use your own account on the server. |
-| Repo address | RUNBOOK step 2 (deploy key, `git clone`) | Use your fork's address. A deploy key is only needed if your fork is private. |
+| Your account and fork | `<you>` and `<your-github>/obento` in the RUNBOOK and `docs/MAC-SETUP.md` | Your account on the server and your fork's address. A deploy key is only needed if your fork is private. |
 | Which optional parts you want | `MODULES` in `.env` ([modules/README.md](modules/README.md)) | `opencloud` (files), `ups`, `domain` (own addresses and the portal), `downloads`. |
 | Hardware workarounds | RUNBOOK steps 0–1: ASUS BIOS, Realtek RTL8125 Ethernet (needs the HWE kernel), MediaTek MT7922 Wi-Fi power saving, interface names `wlp131s0`/`eno1`, Ultrastar PWDIS/Molex note | Only follow the ones that match your hardware. `install.sh` holds the HWE kernel packages either way. |
 | GPU and drives passed to containers | `compose/docker-compose.yml`: `/dev/dri` (Immich, Jellyfin), the `-openvino` image, `/dev/nvme0` (Scrutiny) | Without an Intel iGPU or an NVMe drive, remove or change those lines, or the containers won't start. |
@@ -237,7 +236,6 @@ Settings that came from the author's build, where they are, and whether you need
 | UPS monitor password | `modules/ups/nut/upsd.users` and `upsmon.conf` (`change-me-local-only`) | Change both to the same value. It's only used on the server itself. |
 | Home network ranges | `install.sh`, firewall: `ufw allow from 192.168.0.0/16` and `10.0.0.0/8` | Fine for most home routers. If your network uses `172.16.x.x`, add a line for it. |
 | Time zone | `TZ=America/Los_Angeles` in `.env` | Set yours. `install.sh` sets the server's clock to it too, so the timers run at local times. |
-| pi coding agent | `config/pi/` (points at the author's own model server, `spark-e2ca:11437`); the "pi coding agent" block in `install.sh` | A personal extra. `install.sh` installs Node.js 22 and pi and copies `config/pi/` to `~/.pi/agent/`. Remove that block from `install.sh` in your fork, or point `config/pi/models.json` at your own OpenAI-compatible server. Unused, it does no harm. |
 | Pool name, paths, alert threshold | `POOL_NAME`, `SSD_DATA`, `POOL_WARN_PCT` in `.env` | Safe to leave as they are. |
 
 Everything else in `.env` (passwords, ntfy, B2) is yours to fill in; nothing there is shared with the author.
@@ -312,6 +310,7 @@ Drive replacement, restore tests and manual kernel updates are in the
 
 ```
 AGENTS.md                  notes for coding agents changing this repo
+CONTRIBUTING.md, LICENSE   how to contribute; MIT
 install.sh                 bootstrap (idempotent; doesn't touch the hard drives)
 .env.example               every setting and secret; copy to .env
 compose/docker-compose.yml the core apps
@@ -321,6 +320,7 @@ modules/                   the optional parts, one folder each (README.md: what 
   opencloud/               OpenCloud
   ups/                     NUT config, UPS alerts, the battery gauge's source
   downloads/               Seerr, Sonarr, Radarr, Prowlarr, SABnzbd; setup.sh connects them
+  pi/                      the pi coding agent and Node.js
 scripts/
   obento                   manage the apps: obento up|down|stop|restart|status|logs|update|upgrade|modules|setup|...
   modules.sh               which modules are on, their addresses, routes, portal tiles and compose files
@@ -336,7 +336,6 @@ scripts/
   notify / lib.sh          ntfy alerts and shared helpers used by everything
 config/
   systemd/                 timers: backup, verify, capacity, scrub, health, maintenance; clean app shutdown
-  pi/                      the author's pi coding agent settings (optional)
   smartd.conf  sanoid.conf  52obento-unattended  docker-daemon.json  sshd-hardening.conf
 docs/
   RUNBOOK.md               step by step: install → apps → burn-in → pool → migrate → imports → backup → ops
@@ -360,3 +359,11 @@ Read each script before you run it. In particular:
   Without it the off-site backup can't be read.
 - **Keep a copy of your photos elsewhere until the off-site backup has run and been checked** (step 9). A home
   server is one building; the runbook's order exists so nothing is ever only on it.
+
+## Contributing and license
+
+Fixes, clearer docs and new modules are welcome: see [CONTRIBUTING.md](CONTRIBUTING.md). Coding agents working
+on this repo should read [AGENTS.md](AGENTS.md) first.
+
+obento is released under the [MIT License](LICENSE). The apps it installs (Immich, Vaultwarden, Jellyfin and
+the rest) are separate projects with their own licenses.

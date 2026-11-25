@@ -10,15 +10,16 @@ The optional parts of the setup, one folder each. `MODULES` in `.env` says which
 | `opencloud` | Files synced across devices (OpenCloud, a Google Drive replacement) | |
 | `ups` | A UPS on USB: clean shutdown on low battery, power alerts, the portal's battery gauge | |
 | `downloads` | Automatic TV and film downloads: Seerr, Sonarr, Radarr, Prowlarr, SABnzbd (Usenet) | `domain` |
+| `pi` | The pi coding agent on the server, with Node.js 22, using your own model server | `PI_URL`, `PI_MODEL` |
 
-Without `MODULES` in `.env`, the setup from before modules applies: `opencloud` and `ups`, plus `domain` and
+Without `MODULES` in `.env`, the setup from before modules applies: `opencloud`, `ups` and `pi`, plus `domain` and
 `downloads` if the old `COMPOSE_PROFILES` setting names them.
 
 **Turning a module on**: add it to `MODULES`, then `obento update && obento up`. Some have a setup step
 afterwards (`sudo obento setup downloads`; see the RUNBOOK). **Off**: remove it, then `obento update && obento
 up`: its apps are removed and its addresses and portal tiles go away. Its data stays where it was (for example
-`/srv/sonarr`), so turning it back on picks up where it left off. System services a module installed (NUT for
-`ups`) keep running until you stop them yourself.
+`/srv/sonarr`), so turning it back on picks up where it left off. What a module installed on the system itself
+(NUT for `ups`, Node.js and pi for `pi`) stays until you remove it yourself.
 
 ## Addresses
 

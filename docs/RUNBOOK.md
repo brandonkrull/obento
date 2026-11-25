@@ -88,17 +88,18 @@ SSH from your Mac, then reserve the server's address in your router (Google Home
 
 ```bash
 ip -br addr                                   # on the server: note the address
-ssh-copy-id -i ~/.ssh/id_ed25519.pub brandon@<server-ip>   # on the Mac; asks for the server password once
-ssh brandon@<server-ip>                       # should log in without the password
+ssh-copy-id -i ~/.ssh/id_ed25519.pub <you>@<server-ip>   # on the Mac; asks for the server password once
+ssh <you>@<server-ip>                         # should log in without the password
 ```
 
 ## 2. Bootstrap
 
-Get the repo onto the server. The repo is private, so either give the server a read-only **deploy key**
-(recommended: it can pull updates itself, but can't push or see your other repos), or copy it from your Mac
+Get your fork onto the server (below, `<your-github>/obento` is your fork). If it's public, clone it:
+`git clone https://github.com/<your-github>/obento.git ~/obento`. If it's private, give the server a read-only
+**deploy key** (it can pull updates itself, but can't push or see your other repos), or copy it from your Mac
 with `rsync -a ~/path/to/obento/ <server>:obento/`.
 
-Deploy key (optional):
+Deploy key (private forks):
 
 ```bash
 # on the server
@@ -113,12 +114,12 @@ chmod 600 ~/.ssh/config
 
 # on your Mac (or paste the .pub into GitHub → repo Settings → Deploy keys, leave "Allow write access" off)
 ssh tamago cat .ssh/github_obento.pub > /tmp/tamago.pub
-gh repo deploy-key add /tmp/tamago.pub -R brandonkrull/obento --title "tamago (read-only)"
+gh repo deploy-key add /tmp/tamago.pub -R <your-github>/obento --title "tamago (read-only)"
 
 # on the server: check GitHub's key fingerprint against
 # https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/githubs-ssh-key-fingerprints
 # when asked, then clone
-git clone git@github.com:brandonkrull/obento.git ~/obento
+git clone git@github.com:<your-github>/obento.git ~/obento
 ```
 
 Then, either way:
@@ -140,17 +141,14 @@ verify your email address there, and create an access token (**Account → Acces
 backup, pool, UPS problems) and Scrutiny's warnings are then also emailed; routine ones stay notification-only.
 Test it with `sudo obento-notify high "Email test" "If this arrived by email, alerts will too."`
 
-Later changes: edit and push from your Mac, then on the server `obento update` (it runs `git pull` and `sudo ./install.sh`)
-(the deploy key is read-only, so don't edit on the server).
+Later changes: edit and push from your Mac, then on the server `obento update` (it runs `git pull` and `sudo ./install.sh`).
+Don't edit on the server: `install.sh` overwrites the installed copies, and a deploy key can't push.
 
-`install.sh` also installs **pi** (the coding agent) for your account, set up to use `qwen36-moe` on
-spark-e2ca (`config/pi/`, copied to `~/.pi/agent/`; an existing file there is kept). It reaches spark by its
-Tailscale name, so `tailscale up` must be done first. Check it:
+With the `pi` module, `install.sh` also installs **pi** (the coding agent) and Node.js 22, and writes
+`~/.pi/agent` for your account from `PI_URL` and `PI_MODEL` (once; an existing setup there is kept). Check it:
 
 ```bash
-getent hosts spark-e2ca                       # a 100.x address (via libnss-resolve + Tailscale)
-curl -s http://spark-e2ca:11437/health        # {"status":"ok"}
-pi --list-models qwen
+pi --list-models
 pi -p "Say hello"
 ```
 
@@ -220,7 +218,7 @@ the end). It needs **HTTPS Certificates** turned on in the Tailscale admin conso
       **Secondary** empty (devices would sometimes use it and skip blocking) → **Save**.
    3. Devices pick it up within minutes (toggle Wi-Fi to hurry one). Check AdGuard's **Query log** while browsing.
    Google Wifi answers its devices' DNS itself and forwards to AdGuard, so the query log may show every request
-   as coming from the router (`192.168.86.1`); blocking still covers every device. If the server is down,
+   as coming from the router; blocking still covers every device. If the server is down,
    devices at home can't look up websites until it's back; to undo, set DNS back to **Automatic**.
 5. Optional, away from home (wait until the server is reliably up): Tailscale admin console → **DNS** → add
    nameserver = the server's Tailscale IP, turn on **Override DNS servers** (older consoles: **Override local
