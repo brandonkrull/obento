@@ -31,10 +31,16 @@ notify() {
   # Email only what needs action, to stay within ntfy's daily email limit.
   [[ -n "${NTFY_EMAIL:-}" && "$prio" =~ ^(high|urgent)$ ]] && email=(-H "Email: $NTFY_EMAIL")
   # Never fail the caller, but log why ntfy refused (e.g. email needs an account) instead of hiding it.
-  local resp
-  resp="$(curl -sS -m 15 -w '\n%{http_code}' "${auth[@]}" "${email[@]}" \
-    -H "Title: [$(hostname)] $title" -H "Priority: $prio" \
-    -d "$msg" "${NTFY_URL%/}/$NTFY_TOPIC" 2>&1)" || true
+  # Without an answer at all (no network yet: smartd's alerts at boot come before Wi-Fi is up), try again
+  # for up to two minutes.
+  local resp try
+  for try in {1..12}; do
+    resp="$(curl -sS -m 15 -w '\n%{http_code}' "${auth[@]}" "${email[@]}" \
+      -H "Title: [$(hostname)] $title" -H "Priority: $prio" \
+      -d "$msg" "${NTFY_URL%/}/$NTFY_TOPIC" 2>&1)" || true
+    [[ "${resp##*$'\n'}" == 000 && $try -lt 12 ]] || break
+    sleep 10
+  done
   [[ "${resp##*$'\n'}" == 2* ]] || logger -t obento "ntfy send failed: ${resp//$'\n'/ }" || true
 }
 
