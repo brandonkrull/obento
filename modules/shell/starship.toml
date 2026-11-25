@@ -9,7 +9,7 @@ format = "$username$hostname$directory$git_branch$git_status$cmd_duration$line_b
 format = "[$user]($style)@"
 style_user = "bold yellow"
 style_root = "bold red"
-show_always = false   # only when it isn't your login account (root, after sudo -i)
+show_always = false   # shown over SSH (yellow) and as root (red), not at the server's own keyboard
 
 [hostname]
 ssh_only = false
