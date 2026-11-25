@@ -36,7 +36,7 @@ tailnet's name from the Tailscale admin console, and `home.example.com` stands f
 |---|---|---|
 | `opencloud` | Files synced across devices ([OpenCloud](https://opencloud.eu), a Google Drive replacement) | `https://tamago.<tailnet>.ts.net:9200`, or `https://files.<domain>` |
 | `ups` | Clean shutdown when a USB-connected UPS runs low, and power alerts | |
-| `domain` | Your own short addresses for every app, and a portal: one page with every app, whether it's up, and the server's CPU, memory, disk and UPS battery ([Homepage](https://gethomepage.dev)) | `https://<domain>` |
+| `domain` | Your own short addresses for every app, and a portal: one page with every app, whether it's up, and the server's CPU, memory, SSD, free space on the hard drives and UPS battery ([Homepage](https://gethomepage.dev)) | `https://<domain>` |
 | `downloads` | A request page for shows and films, which are then downloaded from Usenet into Jellyfin's library with subtitles (Seerr, Sonarr, Radarr, Prowlarr, SABnzbd, Bazarr); needs `domain` | `https://requests.<domain>` and friends |
 | `pi` | The [pi](https://www.npmjs.com/package/@earendil-works/pi-coding-agent) coding agent on the server (and Node.js 22), using a model server of your own | |
 
@@ -184,7 +184,7 @@ What it adds:
 - **Traefik**, one more app, which answers every name on port 443 and sends it to the right app. Each
   module declares its names (`HOSTS` in its `module.conf`); rename one in `.env` with `HOST_<NAME>`, for
   example `HOST_REQUESTS=ask` for `ask.home.example.com`.
-- **A portal** at `https://home.example.com` with a tile per app and a status light, plus the UPS battery
+- **A portal** at `https://home.example.com` with a tile per app and a status light, plus the hard drives' free space and the UPS battery
   (`modules/domain/homepage/`; `PORTAL_TITLE` and `PORTAL_LOGO` in `.env` add your own name and image).
 - **One Let's Encrypt certificate** for `home.example.com` and `*.home.example.com`, renewed automatically. To
   get it, the server proves it owns the name through **[deSEC](https://desec.io)**, a free DNS host with an API.

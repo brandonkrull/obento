@@ -116,8 +116,9 @@ body,
   text-align: center !important;
 }
 
-/* The Battery tile only feeds the battery gauge in the top row (custom.js). */
-li.service[data-name="Battery"] {
+/* The Battery and Drives tiles only feed the gauges in the top row (custom.js). */
+li.service[data-name="Battery"],
+li.service[data-name="Drives"] {
   display: none;
 }
 

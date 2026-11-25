@@ -27,3 +27,16 @@
         href: https://@drives@.{{HOMEPAGE_VAR_DOMAIN}}
         description: Scrutiny
         siteMonitor: http://127.0.0.1:8080
+    # Not shown as a tile: custom.js (domain module) draws it as the Drives gauge in the top row, from
+    # scripts/pool-status.py (obento-pool-status.service). Hidden until the pool exists (RUNBOOK step 5).
+    - Drives:
+        widget:
+          type: customapi
+          url: http://127.0.0.1:3012/pool.json
+          refreshInterval: 60000
+          mappings:
+            - field: free
+              label: Free
+              format: bytes
+            - field: health
+              label: Health

@@ -147,6 +147,13 @@ systemctl enable --now obento-capacity.timer obento-scrub.timer obento-health.ti
 # Stops the apps cleanly at shutdown (live-restore would leave them to be killed). Only ever enabled
 # here, never restarted: stopping it stops every app.
 systemctl enable --now obento-apps-stop.service
+# The portal's Drives gauge reads the pool's free space from here (127.0.0.1:3012), so only with the domain module.
+if module_on domain; then
+  systemctl enable --now obento-pool-status.service
+  restart_if_stale obento-pool-status.service /opt/obento/scripts/pool-status.py
+else
+  systemctl disable --now obento-pool-status.service 2>/dev/null || true
+fi
 # Ubuntu's built-in monthly scrub cron is replaced by our timer (which also alerts):
 [[ -f /etc/cron.d/zfsutils-linux ]] && sed -i 's/^\([^#].*zfs.*scrub.*\)$/# \1  # replaced by obento-scrub.timer/' /etc/cron.d/zfsutils-linux
 

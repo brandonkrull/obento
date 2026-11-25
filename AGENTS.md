@@ -91,6 +91,7 @@ Without `APPS_DOMAIN`, `install.sh` publishes apps through `tailscale serve`
 | 3000 | AdGuard admin |
 | 3010 | portal (127.0.0.1 only) |
 | 3011 | UPS battery for the portal, `modules/ups/ups-status.py` (127.0.0.1 only) |
+| 3012 | Hard drive (pool) space for the portal, `scripts/pool-status.py` (127.0.0.1 only) |
 | 5055 | Seerr (127.0.0.1 only) |
 | 6767 | Bazarr (127.0.0.1 only) |
 | 7878 | Radarr (127.0.0.1 only) |

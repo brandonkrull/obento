@@ -1,0 +1,21 @@
+[Unit]
+Description=Hard drive space for the portal (127.0.0.1:3012)
+After=network.target zfs.target
+
+[Service]
+ExecStart=/usr/bin/python3 -I /opt/obento/scripts/pool-status.py
+Restart=on-failure
+DynamicUser=yes
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+# Only /dev/zfs, which 'zfs list' and 'zpool list' read through.
+DevicePolicy=closed
+DeviceAllow=/dev/zfs rw
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+IPAddressAllow=localhost
+IPAddressDeny=any
+
+[Install]
+WantedBy=multi-user.target
