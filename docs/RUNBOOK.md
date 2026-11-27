@@ -328,6 +328,17 @@ sudo tmux new -s burnB 'sudo /opt/obento/scripts/burnin.sh /dev/disk/by-id/ata-W
 
 You'll get ntfy alerts on start, PASS or FAIL. A FAIL → warranty claim with ServerPartDeals.
 
+If a burn-in stops partway (a reboot, a power cut, or a "Burn-in stopped" alert) after badblocks has finished,
+you don't need to redo the ~40-hour write test. Continue from the SMART long self-test; it doesn't write to the
+drive, so it won't ask for the serial number:
+
+```bash
+sudo tmux new -s burnA 'sudo /opt/obento/scripts/burnin.sh --resume /dev/disk/by-id/ata-WDC_WUH721818ALE604_AAAA'
+```
+
+smartd's nightly short self-test can run into the burn-in: under badblocks' load it stalls for hours and then
+finishes a few minutes after badblocks does. The script waits for it before starting the long test.
+
 ## 5. Create the pool
 
 ```bash
