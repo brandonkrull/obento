@@ -11,8 +11,9 @@ Commands assume you're in the repo (`~/obento`) unless they say `/opt/obento`.
   - Advanced → Onboard Devices: leave the iGPU **enabled** (Quick Sync for Immich/Jellyfin).
   - Boot → **Restore AC Power Loss: Power On** (comes back after an outage).
   - Q-Fan: CPU fan "Standard"; chassis headers unused (fans run off the case switch).
-- Ethernet plugged in if you can (more reliable for a NAS). The onboard 2.5 GbE port only works after the
-  newer kernel in step 1; until then use Wi-Fi.
+- Plan on Ethernet: it's more reliable for a NAS, and the server becomes the home network's DNS (step 3), so
+  every device at home depends on its connection. The onboard 2.5 GbE port only works after the newer kernel
+  in step 1, so the first boot uses Wi-Fi and step 1 then switches to Ethernet.
 
 ## 1. Install Ubuntu Server 24.04 LTS
 
@@ -39,7 +40,7 @@ Commands assume you're in the repo (`~/obento`) unless they say `/opt/obento`.
 
 ### After the first boot: network, kernel, SSH
 
-On the server's own keyboard:
+On the server's own keyboard. Wi-Fi first, just long enough to install the kernel that adds the Ethernet port:
 
 ```bash
 ip -br link                                   # Wi-Fi is wl… (e.g. wlp131s0); Ethernet appears as eno1 after the kernel step
@@ -58,7 +59,7 @@ sudo netplan apply
 ping -c 3 ubuntu.com
 ```
 
-Turn off Wi-Fi power saving. With it on (the MT7922 default), the server can reach the network but other
+Turn off Wi-Fi power saving (it matters only while the server uses Wi-Fi). With it on (the MT7922 default), the server can reach the network but other
 devices can't reach it. It's re-applied every time the Wi-Fi connects, because the driver turns it back on:
 
 ```bash
@@ -81,10 +82,29 @@ uname -r                                      # after the reboot: 7.x
 iw dev wlp131s0 get power_save                # "off"
 ```
 
-Ethernet, once a cable is in: add `/etc/netplan/01-ethernet.yaml` with `ethernets: eno1: dhcp4: true`
-(same shape as the Wi-Fi file), `chmod 600`, `sudo netplan apply`.
+Switch to Ethernet now that the kernel sees the port (`ip -br link` lists `eno1`). Plug the cable in, then:
 
-SSH from your Mac, then reserve the server's address in your router (Google Home app) so it doesn't change:
+```bash
+sudo tee /etc/netplan/01-ethernet.yaml >/dev/null <<'EOF'
+network:
+  version: 2
+  ethernets:
+    eno1:
+      dhcp4: true
+EOF
+sudo chmod 600 /etc/netplan/01-ethernet.yaml
+sudo mv /etc/netplan/02-wifi.yaml /root/      # Wi-Fi off; the file stays in /root in case you need it back
+sudo netplan apply
+ip -br addr                                   # eno1 has an address; if wl… still has one too, sudo reboot
+ping -c 3 ubuntu.com
+```
+
+Without a cable run, skip this and stay on Wi-Fi; everything else works the same. To switch an existing
+server later, follow "Moving the server from Wi-Fi to Ethernet" near the end: its address and the home
+network's DNS need moving too. To bring Wi-Fi back: `sudo mv /root/02-wifi.yaml /etc/netplan/ && sudo netplan apply`.
+
+SSH from your Mac, then reserve the server's address in your router (Google Home app) so it doesn't change.
+Reservations follow the network port, so make it after the switch to Ethernet:
 
 ```bash
 ip -br addr                                   # on the server: note the address
@@ -584,6 +604,46 @@ Container logs are capped at 3 × 10 MB per app (`/etc/docker/daemon.json`). Doc
 apps (live-restore). Nothing reboots on its own: when you get "Reboot needed", run `sudo reboot` at a quiet
 time. To see what ran: `journalctl -u obento-maintenance` and `sudo unattended-upgrade --dry-run -d`.
 
+## Moving the server from Wi-Fi to Ethernet
+
+For a server set up on Wi-Fi before the cable was run. The router's address reservation belongs to the Wi-Fi
+connection, and the home network's DNS (step 3) and AdGuard's DNS rewrites point at that address. Done in the
+wrong order, the server comes back on a new address and every device at home loses DNS. While the server is
+off, devices at home can't look up websites either; for a long job, set the router's DNS to **Automatic**
+first and back to the server's address afterwards.
+
+1. Shut down, plug in the cable, start the server. It comes back on Wi-Fi at its usual address.
+2. Add Ethernet. While both are connected the server prefers Ethernet (networkd gives it the lower route
+   metric), and `ip -br addr` shows a second, temporary address on `eno1`:
+
+   ```bash
+   sudo tee /etc/netplan/01-ethernet.yaml >/dev/null <<'EOF'
+   network:
+     version: 2
+     ethernets:
+       eno1:
+         dhcp4: true
+   EOF
+   sudo chmod 600 /etc/netplan/01-ethernet.yaml
+   sudo netplan apply
+   cat /sys/class/net/eno1/address              # the Ethernet MAC, to find it in the router
+   ```
+
+3. Google Home app, **DHCP IP reservations** (same place as step 3): delete the server's Wi-Fi reservation,
+   then reserve the same address for the Ethernet device (match the MAC).
+4. Turn off Wi-Fi and restart, so Ethernet asks for its address again:
+
+   ```bash
+   sudo mv /etc/netplan/02-wifi.yaml /root/     # kept in /root in case you need Wi-Fi back
+   sudo reboot
+   ```
+
+5. Check: on the server, `ip -br addr` shows the usual address on `eno1` only. From another computer at home,
+   `dig @<server LAN IP> doubleclick.net +short` prints `0.0.0.0`, and `dig +short media.home.example.com`
+   prints the LAN IP.
+
+Tailscale, Traefik and the apps don't care which port the server uses; nothing else changes.
+
 ## Kernel updates (manual)
 
 ```bash
@@ -595,4 +655,6 @@ sudo reboot
 ```
 
 If something breaks (NVMe, ZFS, network): reboot, choose **Advanced options for Ubuntu** in GRUB and boot the
-previous kernel. Ubuntu keeps it installed.
+previous kernel. Ubuntu keeps it installed. Don't pick the original 6.8 kernel on an Ethernet-only server: it
+can't see the Ethernet port, so the server has no network until you bring Wi-Fi back at its keyboard
+(`sudo mv /root/02-wifi.yaml /etc/netplan/ && sudo netplan apply`).
